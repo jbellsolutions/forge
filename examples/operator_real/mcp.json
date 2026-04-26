@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "fs_vault": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "${HOME}/.forge/vault"
+      ]
+    },
+
+    "_comment_composio": "Uncomment + set COMPOSIO_API_KEY to enable. Provides 1000+ SaaS tools.",
+    "_composio_disabled": {
+      "command": "npx",
+      "args": ["-y", "@composio/mcp"],
+      "env": {
+        "COMPOSIO_API_KEY": "${COMPOSIO_API_KEY}"
+      }
+    }
+  }
+}

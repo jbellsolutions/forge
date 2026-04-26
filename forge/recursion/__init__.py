@@ -2,10 +2,12 @@
 from .llm_proposer import (
     PROGRAM_DIRECTIVE, ResultsLedger, parse_diffs, propose_with_llm,
 )
+from .loop import RecurseResult, recurse_once
 from .proposer import HarnessDiff, TraceAnalyzer, apply, fork, keep_or_rollback, propose
 
 __all__ = [
     "HarnessDiff", "TraceAnalyzer",
     "apply", "fork", "keep_or_rollback", "propose",
     "PROGRAM_DIRECTIVE", "ResultsLedger", "parse_diffs", "propose_with_llm",
+    "RecurseResult", "recurse_once",
 ]

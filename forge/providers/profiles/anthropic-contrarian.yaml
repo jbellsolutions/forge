@@ -1,0 +1,11 @@
+name: anthropic-contrarian
+vendor: anthropic
+model: claude-sonnet-4-5-20250929
+max_tokens: 1024
+temperature: 1.0
+cost_tier: balanced
+failover: [anthropic-haiku]
+extra:
+  prompt_format: messages_v1
+  tool_protocol: anthropic_tool_use
+  persona_role: contrarian

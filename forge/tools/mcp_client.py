@@ -55,10 +55,36 @@ class MCPServerConfig:
 
 
 def load_mcp_servers(path: str | Path) -> list[MCPServerConfig]:
-    """Load Claude-Desktop-style mcp.json: { "mcpServers": { "<name>": {...} } }."""
+    """Load Claude-Desktop-style mcp.json: { "mcpServers": { "<name>": {...} } }.
+
+    - Skips entries whose name starts with `_` (commented-out scaffolding).
+    - Expands `${VAR}` in args + env via os.path.expandvars.
+    - Drops servers whose required env vars are unset (so optional integrations
+      stay quiet when keys are missing).
+    """
+    import os
     raw = json.loads(Path(path).read_text())
     servers = raw.get("mcpServers", raw)
-    return [MCPServerConfig.from_dict(name, data) for name, data in servers.items()]
+    out: list[MCPServerConfig] = []
+    for name, data in servers.items():
+        if name.startswith("_"):
+            continue
+        # Expand ${VAR} in args + env values.
+        args = [os.path.expandvars(a) for a in data.get("args", [])]
+        env = {k: os.path.expandvars(v) for k, v in (data.get("env") or {}).items()}
+        # Skip if any required env value resolved empty.
+        if any(not v for v in env.values()):
+            log.warning("mcp server %r skipped: required env unset (%s)", name,
+                        [k for k, v in env.items() if not v])
+            continue
+        out.append(MCPServerConfig(
+            name=name,
+            command=data["command"],
+            args=args,
+            env=env,
+            transport=data.get("transport", "stdio"),
+        ))
+    return out
 
 
 class _MCPProxyTool(Tool):
