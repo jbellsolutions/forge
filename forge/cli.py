@@ -349,6 +349,83 @@ def _cmd_vault(args: argparse.Namespace) -> int:
     return 2
 
 
+def _cmd_new(args: argparse.Namespace) -> int:
+    """forge new — describe a swarm in English, get a swarm.
+
+    Flow:
+      1. LLM designs SwarmDesign from --description
+      2. Show plan; user picks one of: terminal / claude / dashboard / all
+      3. Scaffold accordingly
+    """
+    description = args.description.strip() if args.description else ""
+    if not description:
+        print("error: pass a description, e.g. forge new \"DM me a Notion summary daily\"",
+              file=sys.stderr)
+        return 2
+
+    from .scaffolder import (
+        design_swarm, write_terminal_project, write_claude_subagents,
+        propose_dashboard_action,
+    )
+    print(f"forge new: designing swarm for: {description!r}")
+    design = asyncio.run(design_swarm(description, profile=args.profile))
+
+    print("\n── Proposed swarm ─────────────────────────────────────────")
+    print(f"  name:       {design.name}")
+    print(f"  topology:   {design.topology}")
+    print(f"  consensus:  {design.consensus}")
+    print(f"  schedule:   {design.schedule or '(on-demand)'}")
+    print(f"  agents:     {len(design.agents)}")
+    for a in design.agents:
+        tools = ", ".join(a.tools) if a.tools else "(none)"
+        print(f"    - {a.name} ({a.role}) — {a.profile} — tools: {tools}")
+    if design.notes:
+        print(f"  notes:      {design.notes}")
+    print()
+
+    where = (args.where or "").strip().lower()
+    if not where:
+        print("Where do you want to run this?")
+        print("  [1] terminal   — examples/<name>/run.py (run via `forge run`)")
+        print("  [2] claude     — .claude/agents/*.md (drop into any Claude Code session)")
+        print("  [3] dashboard  — POST a PendingAction to your Railway dashboard for Approve flow")
+        print("  [4] all        — all three")
+        try:
+            choice = input("> choice [1/2/3/4, q to abort]: ").strip()
+        except EOFError:
+            choice = "q"
+        where = {"1": "terminal", "2": "claude", "3": "dashboard", "4": "all"}.get(choice, choice)
+    if where in ("q", "quit", "abort", ""):
+        print("aborted.")
+        return 1
+
+    out_root = Path(args.out).expanduser() if args.out else Path.cwd()
+    written: list[Path] = []
+    if where in ("terminal", "all"):
+        written += write_terminal_project(design, out_root)
+    if where in ("claude", "all"):
+        written += write_claude_subagents(design, out_root)
+    if where in ("dashboard", "all"):
+        url = args.dashboard_url or os.environ.get("FORGE_SYNC_URL", "")
+        token = args.dashboard_token or os.environ.get("SYNC_SHARED_SECRET", "")
+        if not url or not token:
+            print("dashboard mode requires --dashboard-url + --dashboard-token "
+                  "(or FORGE_SYNC_URL / SYNC_SHARED_SECRET env vars)", file=sys.stderr)
+        else:
+            try:
+                aid = propose_dashboard_action(design, url, token)
+                print(f"  → dashboard: PendingAction {aid} — Approve in workspace")
+            except Exception as e:  # noqa: BLE001
+                print(f"  → dashboard: failed to propose: {e}", file=sys.stderr)
+
+    if written:
+        print("\nwrote:")
+        for p in written:
+            print(f"  {p}")
+    print(f"\ndone. design saved to: examples/{design.name}/design.json (if terminal mode)")
+    return 0
+
+
 def _cmd_sync(args: argparse.Namespace) -> int:
     """forge sync push|pull-and-apply|daemon."""
     import os
@@ -491,6 +568,24 @@ def build_parser() -> argparse.ArgumentParser:
     rep.add_argument("--at", default=None,
                      help="window end as ISO date (YYYY-MM-DD); defaults to now")
     rep.set_defaults(func=_cmd_report)
+
+    nw = sub.add_parser("new", help="describe a swarm in English, get a swarm")
+    nw.add_argument("description", nargs="?", default="",
+                    help="natural-language description of what the swarm should do")
+    nw.add_argument("--profile", default="anthropic-haiku",
+                    help="provider profile used for the design step")
+    nw.add_argument("--where", default=None,
+                    choices=["terminal", "claude", "dashboard", "all"],
+                    help="skip the interactive prompt; pick output mode directly")
+    nw.add_argument("--out", default=None,
+                    help="output root (default: cwd). Terminal mode writes "
+                         "examples/<name>/; Claude mode writes .claude/agents/")
+    nw.add_argument("--dashboard-url", default=None,
+                    help="dashboard base URL for `--where dashboard` "
+                         "(default $FORGE_SYNC_URL)")
+    nw.add_argument("--dashboard-token", default=None,
+                    help="shared secret (default $SYNC_SHARED_SECRET)")
+    nw.set_defaults(func=_cmd_new)
 
     sy = sub.add_parser("sync", help="local↔cloud bridge: push deltas / pull-and-apply approved actions")
     sy.add_argument("action", choices=["push", "pull-and-apply", "daemon"])

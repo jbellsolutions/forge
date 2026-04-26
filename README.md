@@ -7,15 +7,76 @@
 
 **A model-agnostic, self-learning, self-healing agent harness — and the Python SDK to build agent swarms on top of it.**
 
-Drop forge into any project. Spin up parallel councils on any model — Claude, GPT, DeepSeek, Llama, mixed. Self-improve via recursive harness modification. Memory and skills compound across projects. Use it as a Python SDK, a CLI, or a Claude Code slash command + MCP server.
+---
+
+## What forge does
+
+You describe a swarm of agents in plain English. forge designs the architecture (which agents, what roles, what tools, what schedule), asks you where to run it, and spins it up.
+
+**Drop this repo into any AI IDE — Claude Code, Codex, Cursor, or just a terminal — and say something like:**
+
+> "build me a swarm that pulls Apollo leads every morning, qualifies them with Claude, and DMs the hot ones to my Slack"
+
+forge proposes the architecture, you approve, and it scaffolds the swarm into one of three places — your choice:
+
+| Where it runs | What you get | Best for |
+|---|---|---|
+| **Local terminal** | `examples/<name>/run.py` you can run on demand or cron | Hacking on the swarm, version-controlling it, no external dependencies |
+| **Railway dashboard** | A `PendingAction` in your hosted dashboard; one click and it materializes locally on the next 5-min sync | Persistent control plane, daily/weekly reports, watching your swarm evolve from anywhere |
+| **Claude Code subagents** | Drop-in `.claude/agents/<name>.md` files in your repo's `.claude/` directory | Working day-to-day inside Claude Code; subagents you can invoke via `/agents` |
+
+Pick one, pick all three. The swarm itself is the same; only the runtime changes.
+
+---
+
+## How to use it
+
+### One-line swarm — from any terminal
 
 ```bash
-pip install forge-harness
+pip install 'forge-harness[dashboard]'
+forge new "DM me a Notion summary every morning at 8"
 ```
 
+forge will:
+1. Design a swarm (LLM-driven; uses Anthropic Haiku by default ≈ $0.005)
+2. Show you the proposed architecture (agents, roles, tools, schedule)
+3. Ask where to run it: `[1] terminal  [2] claude  [3] dashboard  [4] all`
+4. Scaffold the artifacts
+
+### From Claude Code / Codex / any AI IDE
+
+Open this repo in your IDE. Tell it:
+
+> "Use forge to build me a swarm that does X."
+
+The IDE reads `forge`'s docs, runs `forge new "X"`, and walks you through the same flow. (No special integration needed — `forge new` is just a CLI.)
+
+### From the Railway dashboard
+
+If you already have the dashboard deployed (see [Railway deploy](RAILWAY_DEPLOY.md)), the orchestrator chat ("Papa Bear") on the Workspace page can also design and propose swarms. Type a description; click Approve on the PendingAction; the next local sync materializes the scaffold.
+
+### Manual mode (no LLM, no design step)
+
+If you already know the swarm shape and just want the SDK:
+
 ```python
-from forge import RoleCouncilSpawner, SwarmSpec, Topology, Consensus
-# ...build a 3-member council in 10 lines (full example below)
+from forge import (
+    HookBus, ToolRegistry, RoleCouncilSpawner, RoleAssignment,
+    SwarmSpec, Topology, Consensus, attach_healing,
+)
+```
+
+See [the 60-second SDK pitch](#the-60-second-sdk-pitch) below.
+
+---
+
+## Install
+
+```bash
+pip install forge-harness                   # core SDK + CLI
+pip install 'forge-harness[dashboard]'      # +FastAPI dashboard, Postgres support
+pip install 'forge-harness[intel]'          # +auto-research with Tavily
 ```
 
 > Distribution name on PyPI: `forge-harness`. Import name in Python: `forge`. Same pattern as `pillow → import PIL` or `scikit-learn → import sklearn`.
@@ -41,7 +102,7 @@ It's a *harness*, not a framework — a thin kernel + extensible hook bus + a la
 
 ---
 
-## The 60-second pitch
+## The 60-second SDK pitch
 
 ```python
 import asyncio

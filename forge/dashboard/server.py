@@ -346,6 +346,27 @@ def _register_routes(app: FastAPI) -> None:
             ses.commit()
         return {"ok": True}
 
+    @app.post("/sync/propose-design")
+    async def sync_propose_design(
+        request: Request,
+        x_forge_sync_token: str | None = Header(None),
+    ):
+        """Receive a `forge new --where dashboard` design payload and queue it
+        as a PendingAction for the user to Approve in the workspace."""
+        s: Settings = request.app.state.settings
+        _check_sync_token(x_forge_sync_token, s)
+        body = await request.json()
+        kind = body.get("kind", "start_project")
+        payload = body.get("payload") or {}
+        action_id = f"pa_{uuid.uuid4().hex[:12]}"
+        with _session(request) as ses:
+            ses.add(PendingAction(
+                id=action_id, kind=kind, payload_json=payload,
+                status="pending", proposed_by="forge-new",
+            ))
+            ses.commit()
+        return {"id": action_id, "status": "pending"}
+
     # ---- pending action approve/reject (no orchestrator yet — buttons just flip status)
 
     @app.post("/actions/{action_id}/approve")
