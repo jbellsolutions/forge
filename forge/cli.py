@@ -250,6 +250,9 @@ def build_parser() -> argparse.ArgumentParser:
     hb.add_argument("--dir", default=str(Path.home() / ".forge" / "default" / ".claude" / "heartbeats"))
     hb.set_defaults(func=_cmd_heartbeat)
 
+    mcp = sub.add_parser("mcp", help="run forge as a stdio MCP server")
+    mcp.set_defaults(func=lambda a: __import__("forge.mcp_server", fromlist=["main"]).main())
+
     return p
 
 
