@@ -63,21 +63,23 @@
           <span class="ml-2 inline-block px-2 py-0.5 text-[10px] rounded-full bg-slate-100 text-slate-500 font-normal">papa bear</span>
         </h2>
       </div>
-      <div id="chat-log" class="p-5 max-h-96 overflow-y-auto text-sm space-y-3">
-        <p class="text-slate-400 text-center py-6">
-          Orchestrator chat is wired in C-2.<br>
-          For now, agents are managed via the local <code>forge</code> CLI + sync push.
+      <div id="chat-log" class="p-5 max-h-[28rem] overflow-y-auto text-sm space-y-3">
+        <p class="text-slate-400 text-center py-6 text-xs">
+          Ask anything. I have full context across projects, agents, intel,
+          and recent self-improvement events. To mutate state, I'll propose
+          a PendingAction you can Approve.
         </p>
       </div>
       <form hx-post="/orchestrator/turn"
             hx-target="#chat-log"
             hx-swap="beforeend"
+            hx-on::after-request="this.querySelector('input[name=message]').value=''"
             class="border-t border-slate-200 p-3 flex gap-2">
-        <input name="message" placeholder="Ask the orchestrator… (chat ships in C-2)"
-               disabled
-               class="flex-1 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-400 cursor-not-allowed bg-slate-50">
-        <button type="submit" disabled
-                class="px-4 py-2 rounded-md bg-slate-200 text-slate-400 text-sm font-medium cursor-not-allowed">
+        <input type="hidden" name="session_id" value="">
+        <input name="message" placeholder="Ask the orchestrator…" required autocomplete="off"
+               class="flex-1 border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400">
+        <button type="submit"
+                class="px-4 py-2 rounded-md bg-slate-900 text-white text-sm font-medium hover:bg-slate-800">
           Send
         </button>
       </form>

@@ -232,6 +232,55 @@ def _register_routes(app: FastAPI) -> None:
             {"memories": mems, "q": q or "", "total": len(total)},
         )
 
+    # ---- orchestrator chat (C-2) ----------------------------------------
+
+    @app.post("/orchestrator/turn", response_class=HTMLResponse)
+    async def orchestrator_turn(
+        request: Request,
+        message: str = Form(...),
+        session_id: str | None = Form(None),
+        _user: str = Depends(require_auth),
+    ):
+        """Run one orchestrator chat turn. Returns user+assistant messages
+        rendered for HTMX `beforeend` swap into #chat-log."""
+        from ..orchestrator.agent import OrchestratorAgent
+        s: Settings = request.app.state.settings
+        if not s.anthropic_api_key and not getattr(request.app.state, "_test_provider", None):
+            return HTMLResponse(
+                '<div class="text-amber-700 text-xs p-2">'
+                'orchestrator chat needs ANTHROPIC_API_KEY set in env</div>',
+                status_code=503,
+            )
+        sid = session_id or f"chat_{uuid.uuid4().hex[:12]}"
+        provider_override = getattr(request.app.state, "_test_provider", None)
+
+        def _ses_factory() -> Session:
+            return Session(request.app.state.engine)
+
+        agent = OrchestratorAgent(
+            ses_factory=_ses_factory,
+            profile=s.orchestrator_profile,
+            provider=provider_override,
+        )
+        try:
+            result = await agent.chat_turn(sid, message)
+        except Exception as e:
+            log.exception("orchestrator turn failed")
+            return HTMLResponse(
+                f'<div class="text-rose-700 text-xs p-2">orchestrator error: {e}</div>',
+                status_code=500,
+            )
+        return TEMPLATES.TemplateResponse(
+            request, "chat_message.html",
+            {
+                "session_id": sid,
+                "user_msg": message,
+                "reply": result["reply"],
+                "actions": result.get("actions") or [],
+                "tool_calls": result.get("tool_calls") or [],
+            },
+        )
+
     # ---- sync (HTTP API for local↔cloud bridge — wired in C-3) -----------
 
     def _check_sync_token(token: str | None, settings: Settings) -> None:
