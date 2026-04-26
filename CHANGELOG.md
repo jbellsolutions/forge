@@ -4,6 +4,15 @@ All notable changes to forge are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and forge adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) starting with v0.1.0.
 
+## [0.1.1] — 2026-04-26
+
+Documentation-only patch. README rewritten as a full product narrative —
+research story (16 sources, 3 clusters, 3-round analysis loops),
+architecture explanation, live verification table with real numbers,
+debug notes covering eight real fixes, full SDK API surface map,
+architecture references with links, roadmap. PyPI project page now shows
+the long-form description. No code changes.
+
 ## [0.1.0] — 2026-04-26
 
 First public release. Full 8-layer harness, MCP server, Claude Code skill +

@@ -8,7 +8,7 @@ re-export.
 """
 from . import _dotenv  # noqa: F401  -- side-effect: load ~/.forge/.env
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 # L0 kernel
 from .kernel import (
