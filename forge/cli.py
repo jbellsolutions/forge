@@ -197,6 +197,49 @@ def _cmd_dashboard(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_intel(args: argparse.Namespace) -> int:
+    home = Path(args.home).expanduser()
+    if args.action == "pull":
+        from .intel import pull_intel, store_items, load_sources
+        from .intel.normalize import maybe_haiku_rerank
+        sources = load_sources(home)
+        items = pull_intel(home, sources)
+        if not args.dry_run and items:
+            items = maybe_haiku_rerank(items, use_llm=False)  # cheap default
+            meta = store_items(home, items)
+        else:
+            meta = {"dry_run": True}
+        print(json.dumps({
+            "fetched": len(items),
+            "by_relevance": {
+                r: sum(1 for i in items if i.relevance == r)
+                for r in ("high", "med", "low")
+            },
+            "store": meta,
+        }, indent=2, default=str))
+        return 0
+    if args.action == "show":
+        from datetime import datetime, timezone
+        date = args.at or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        p = home / "intel" / f"{date}.json"
+        if not p.exists():
+            print(f"(no intel for {date} at {p})")
+            return 0
+        try:
+            items = json.loads(p.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            print(f"(corrupt JSON at {p})")
+            return 1
+        from .intel import build_intel_digest, IntelItem
+        digest = build_intel_digest([
+            IntelItem(**{k: v for k, v in it.items() if k in IntelItem.__dataclass_fields__})
+            for it in items if isinstance(it, dict)
+        ])
+        print(digest.to_markdown())
+        return 0
+    return 1
+
+
 def _cmd_report(args: argparse.Namespace) -> int:
     """Build a digest and deliver it via the configured channel."""
     import asyncio
@@ -338,6 +381,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     mcp = sub.add_parser("mcp", help="run forge as a stdio MCP server")
     mcp.set_defaults(func=lambda a: __import__("forge.mcp_server", fromlist=["main"]).main())
+
+    intel = sub.add_parser("intel", help="industry-signal pull / show")
+    intel.add_argument("action", choices=["pull", "show"])
+    intel.add_argument("--home", default=str(Path.home() / ".forge" / "default"))
+    intel.add_argument("--dry-run", action="store_true",
+                       help="for `pull`: fetch + parse but do not write")
+    intel.add_argument("--at", default=None,
+                       help="for `show`: YYYY-MM-DD; defaults to today")
+    intel.set_defaults(func=_cmd_intel)
 
     rep = sub.add_parser("report", help="build + deliver a self-improvement digest")
     rep.add_argument("--period", choices=["day", "week"], default="day")

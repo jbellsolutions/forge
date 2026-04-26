@@ -1,0 +1,65 @@
+# forge intel — sources override file
+#
+# This is the SHIPPED EXAMPLE. To override the default source list,
+# copy to ~/.forge/intel/sources.yaml and edit. forge.intel.sources
+# loads `<home>/intel/sources.yaml` if it exists, else falls back to
+# the inline default list (which mirrors this file).
+#
+# IMPORTANT: every source URL must be on the DOMAIN_ALLOWLIST defined in
+# forge/intel/sources.py. forge will silently skip URLs that aren't
+# allowlisted (this is intentional: a typo'd source MUST NOT pivot to
+# arbitrary endpoints when forge fetches it).
+
+sources:
+  # Anthropic
+  - name: anthropic_news
+    kind: html
+    url: https://www.anthropic.com/news
+    tags: [anthropic, claude, model]
+
+  - name: anthropic_quickstarts_releases
+    kind: github_releases
+    url: https://api.github.com/repos/anthropics/anthropic-quickstarts/releases
+    tags: [anthropic, sdk, examples]
+
+  - name: claude_code_releases
+    kind: github_releases
+    url: https://api.github.com/repos/anthropics/claude-code/releases
+    tags: [anthropic, claude-code, cli]
+
+  - name: anthropic_sdk_python_releases
+    kind: github_releases
+    url: https://api.github.com/repos/anthropics/anthropic-sdk-python/releases
+    tags: [anthropic, sdk, python]
+
+  # OpenAI
+  - name: openai_blog
+    kind: rss
+    url: https://openai.com/blog/rss.xml
+    tags: [openai, model]
+
+  - name: openai_python_releases
+    kind: github_releases
+    url: https://api.github.com/repos/openai/openai-python/releases
+    tags: [openai, sdk, python]
+
+  # MCP / Composio / open-source harness ecosystem
+  - name: mcp_python_sdk_releases
+    kind: github_releases
+    url: https://api.github.com/repos/modelcontextprotocol/python-sdk/releases
+    tags: [mcp, sdk, python]
+
+  - name: mcp_servers_releases
+    kind: github_releases
+    url: https://api.github.com/repos/modelcontextprotocol/servers/releases
+    tags: [mcp, servers]
+
+  - name: composio_releases
+    kind: github_releases
+    url: https://api.github.com/repos/ComposioHQ/composio/releases
+    tags: [composio, tools, mcp]
+
+  - name: autoagent_releases
+    kind: github_releases
+    url: https://api.github.com/repos/kevinrgu/autoagent/releases
+    tags: [autoagent, harness, research]

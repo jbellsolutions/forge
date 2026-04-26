@@ -7,6 +7,28 @@ All notable changes to forge are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Industry intel — passive pull pipeline (`forge.intel`)** — daily
+  ingestion of RSS / Atom / GitHub releases / JSON changelogs / HTML
+  pages from a hard-coded `DOMAIN_ALLOWLIST` (anthropic / openai /
+  github.com/{anthropics,openai,modelcontextprotocol,ComposioHQ,kevinrgu}
+  / mcp / huggingface / etc). Stdlib-only fetching (`urllib`,
+  `xml.etree`, `json`); no `requests`, no `feedparser`. Public surface:
+  `IntelItem`, `Source`, `pull_intel`, `IntelDigest`, `build_intel_digest`,
+  `store_items`, `load_sources`, `is_allowed`. New CLI: `forge intel
+  pull|show`. Default 10 sources covering Claude / OpenAI / Composio /
+  MCP / AutoAgent — overridable via `~/.forge/intel/sources.yaml`.
+  Dedup across runs via `<home>/intel/seen.json`. Items persisted three
+  ways: `<home>/intel/<YYYY-MM-DD>.json` (machine-read), `<home>/vault/
+  intel/<source>/<slug>.md` (Obsidian backlinks graph picks them up),
+  and top-3 high-relevance items distilled into `genome()` for cross-
+  project compounding. Live verification: 156 items pulled across 10
+  sources; 66 high / 70 med relevance; 20 low (dropped from digest).
+- **`Element.__bool__` correctness fix** — Atom feed parser uses
+  `is not None` checks instead of `el.find(...) or el.find(...)`,
+  which Python 3.14 short-circuits incorrectly when an element has
+  no children (e.g. self-closing `<link href="..."/>`). Caught by
+  the test fixture; would have silently dropped Atom items in
+  production.
 - **Self-improvement reporting (L7)** — daily/weekly digest aggregating
   recursion ledger outcomes, skill creations + promotions + rollbacks,
   denial-loop events, telemetry rollup, genome growth, and intel highlights.

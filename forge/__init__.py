@@ -112,6 +112,20 @@ from .recursion import (
     recurse_once,
 )
 
+# Intel
+from .intel import (
+    DEFAULT_SOURCES,
+    DOMAIN_ALLOWLIST,
+    IntelDigest,
+    IntelItem,
+    Source,
+    build_intel_digest,
+    is_allowed,
+    load_sources,
+    pull_intel,
+    store_items,
+)
+
 
 __all__ = [
     "__version__",
@@ -145,4 +159,8 @@ __all__ = [
     # Recursion
     "HarnessDiff", "RecurseResult", "ResultsLedger", "TraceAnalyzer",
     "propose", "propose_with_llm", "recurse_once",
+    # Intel
+    "DEFAULT_SOURCES", "DOMAIN_ALLOWLIST", "IntelDigest", "IntelItem",
+    "Source", "build_intel_digest", "is_allowed", "load_sources",
+    "pull_intel", "store_items",
 ]
