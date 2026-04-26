@@ -84,28 +84,41 @@ def apply(diff: HarnessDiff, root: str | Path) -> bool:
     """Apply a HarnessDiff. Returns True on success."""
     root = Path(root)
     if diff.op == "retune_circuit":
+        tool = diff.payload.get("tool")
+        if not tool:
+            return False
         path = root / diff.target
         path.parent.mkdir(parents=True, exist_ok=True)
         data = json.loads(path.read_text() or "{}") if path.exists() else {}
-        data[diff.payload["tool"]] = {
-            "fail_threshold": diff.payload["fail_threshold"],
-            "cooldown_seconds": diff.payload["cooldown_seconds"],
+        data[tool] = {
+            "fail_threshold": int(diff.payload.get("fail_threshold", 3)),
+            "cooldown_seconds": int(diff.payload.get("cooldown_seconds", 3600)),
         }
         path.write_text(json.dumps(data, indent=2))
         return True
     if diff.op == "deny_tool":
+        tool = diff.payload.get("tool") or diff.payload.get("name")
+        if not tool:
+            return False
         path = root / diff.target
         path.parent.mkdir(parents=True, exist_ok=True)
         existing = path.read_text() if path.exists() else "denied_tools: []\n"
-        # Cheap YAML edit; production uses ruamel.yaml.
         if "denied_tools:" not in existing:
             existing += "\ndenied_tools: []\n"
-        if diff.payload["tool"] not in existing:
+        if tool not in existing:
             existing = existing.replace(
                 "denied_tools: []",
-                f"denied_tools: [{diff.payload['tool']}]",
+                f"denied_tools: [{tool}]",
             )
         path.write_text(existing)
+        return True
+    if diff.op == "patch_yaml":
+        # Best-effort: append a YAML stanza to the target file.
+        path = root / diff.target
+        path.parent.mkdir(parents=True, exist_ok=True)
+        existing = path.read_text() if path.exists() else ""
+        snippet = diff.payload.get("yaml") or json.dumps(diff.payload)
+        path.write_text(existing.rstrip() + "\n" + snippet + "\n")
         return True
     return False
 

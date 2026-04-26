@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
-from ..kernel.types import AgentDef, ToolCall, ToolResult
+if TYPE_CHECKING:
+    from ..kernel.types import AgentDef, ToolCall, ToolResult
 
 
 Tier = Literal["mcp", "computer_browser", "cli"]
@@ -19,7 +20,7 @@ class Tool(ABC):
     tier: ClassVar[Tier] = "mcp"
 
     @abstractmethod
-    async def execute(self, call: ToolCall, agent: AgentDef) -> ToolResult:
+    async def execute(self, call: "ToolCall", agent: "AgentDef") -> "ToolResult":
         ...
 
     def schema(self) -> dict[str, Any]:

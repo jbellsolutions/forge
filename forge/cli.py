@@ -24,6 +24,31 @@ from pathlib import Path
 __version__ = "0.0.1"
 
 
+def _load_dotenv() -> None:
+    """Load ~/.forge/.env into os.environ if present. Outside repo by design.
+
+    Format: simple KEY=VALUE per line, # comments, no quoting tricks.
+    """
+    path = Path.home() / ".forge" / ".env"
+    if not path.exists():
+        return
+    try:
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, _, v = line.partition("=")
+            k = k.strip()
+            v = v.strip().strip('"').strip("'")
+            # Don't clobber existing env (lets shell exports override)
+            os.environ.setdefault(k, v)
+    except OSError:
+        pass
+
+
+_load_dotenv()
+
+
 def _cmd_doctor(args: argparse.Namespace) -> int:
     from .health import doctor
     report = doctor(home=Path(args.home).expanduser() if args.home else None)

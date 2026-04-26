@@ -150,7 +150,7 @@ async def run_council_with_tools(registry, hooks, vault, bank):
             "Reply with EXACTLY one word (SHIP or WAIT) on its own line, then "
             "1-2 sentences citing what you found."
         ),
-        max_turns=4,
+        max_turns=8,
     )
     spawner.set_assignments([
         RoleAssignment(profile="anthropic",            role="optimist"),

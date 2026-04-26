@@ -18,10 +18,14 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 
-from ..providers.base import Provider
-from ..tools.registry import ToolRegistry
+from typing import TYPE_CHECKING
+
 from .hooks import HookBus, HookContext
 from .types import AgentDef, AssistantTurn, Message, ToolCall, ToolResult, Verdict
+
+if TYPE_CHECKING:
+    from ..providers.base import Provider
+    from ..tools.registry import ToolRegistry
 
 log = logging.getLogger("forge.loop")
 
@@ -39,8 +43,8 @@ class AgentLoop:
     def __init__(
         self,
         agent: AgentDef,
-        provider: Provider,
-        tools: ToolRegistry,
+        provider: "Provider",
+        tools: "ToolRegistry",
         hooks: HookBus | None = None,
         max_turns: int = 10,
     ) -> None:
@@ -116,11 +120,13 @@ class AgentLoop:
         else:
             halted_reason = f"max_turns reached ({self.max_turns})"
 
-        # Extract last assistant text as final answer.
+        # Extract last NON-EMPTY assistant text as final answer.
+        # Walking backward avoids returning '' when the last assistant message
+        # was a tool-call-only turn that hit max_turns before a follow-up text.
         final_text = ""
         for m in reversed(messages):
-            if m.role == "assistant":
-                final_text = m.content if isinstance(m.content, str) else ""
+            if m.role == "assistant" and isinstance(m.content, str) and m.content.strip():
+                final_text = m.content
                 break
 
         end_ctx = HookContext(session_id=sid, agent_name=self.agent.name,

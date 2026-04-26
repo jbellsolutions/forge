@@ -46,14 +46,21 @@ the FIXED ADAPTER BOUNDARY contract.
 - Each proposed diff MUST cite a trace path and a failure pattern.
 
 ## Output contract
-Return ONLY a JSON array of objects, each shaped:
-  {
-    "rationale": "one-sentence why",
-    "target":    "relative/path/to/file",
-    "op":        "retune_circuit" | "deny_tool" | "patch_yaml",
-    "payload":   {... op-specific fields ...}
-  }
+Return ONLY a JSON array of objects. The harness understands EXACTLY these op shapes:
 
+retune_circuit — tighten a CircuitBreaker for a misbehaving tool:
+  {"rationale":"...","target":".forge/healing/circuits.json","op":"retune_circuit",
+   "payload":{"tool":"<exact tool name from symptoms>","fail_threshold":2,"cooldown_seconds":1800}}
+
+deny_tool — add a tool to the default persona's deny-list:
+  {"rationale":"...","target":".claude/personas/_default.yaml","op":"deny_tool",
+   "payload":{"tool":"<exact tool name from symptoms>"}}
+
+patch_yaml — append a stanza to a YAML file (last resort):
+  {"rationale":"...","target":"<relative path>","op":"patch_yaml",
+   "payload":{"yaml":"key: value"}}
+
+Use ONLY these targets and payload keys. Tool names must match those in symptoms.
 Empty array `[]` means: I see no safe change to propose.
 """
 
