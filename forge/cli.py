@@ -349,6 +349,52 @@ def _cmd_vault(args: argparse.Namespace) -> int:
     return 2
 
 
+def _cmd_sync(args: argparse.Namespace) -> int:
+    """forge sync push|pull-and-apply|daemon."""
+    import os
+    home = Path(args.home).expanduser()
+    home.mkdir(parents=True, exist_ok=True)
+    url = args.url or os.environ.get("FORGE_SYNC_URL", "")
+    token = args.token or os.environ.get("SYNC_SHARED_SECRET") or os.environ.get("FORGE_SYNC_TOKEN", "")
+    if not url:
+        print("error: --url or FORGE_SYNC_URL required", file=sys.stderr)
+        return 2
+    if not token:
+        print("error: --token or SYNC_SHARED_SECRET required", file=sys.stderr)
+        return 2
+
+    if args.action == "push":
+        from .sync import push_deltas
+        result = push_deltas(home, url, token)
+        result["state"].save(home)
+        print(json.dumps(result["counts"], indent=2))
+        return 0
+
+    if args.action == "pull-and-apply":
+        from .sync import pull_pending_actions
+        results = pull_pending_actions(home, url, token)
+        print(json.dumps(results, indent=2))
+        return 0
+
+    if args.action == "daemon":
+        import time
+        from .sync import push_deltas, pull_pending_actions
+        interval = max(60, args.interval)
+        print(f"forge sync daemon: every {interval}s against {url}")
+        while True:
+            try:
+                r1 = push_deltas(home, url, token)
+                r1["state"].save(home)
+                r2 = pull_pending_actions(home, url, token)
+                print(f"[{time.strftime('%H:%M:%S')}] push={r1['counts']} pull={len(r2)}")
+            except Exception as e:  # noqa: BLE001
+                print(f"[{time.strftime('%H:%M:%S')}] sync error: {e}", file=sys.stderr)
+            time.sleep(interval)
+
+    print(f"unknown sync action: {args.action}", file=sys.stderr)
+    return 2
+
+
 def _cmd_heartbeat(args: argparse.Namespace) -> int:
     from .scheduler.heartbeat import run_all
     return asyncio.run(run_all(Path(args.dir).expanduser()))
@@ -445,6 +491,17 @@ def build_parser() -> argparse.ArgumentParser:
     rep.add_argument("--at", default=None,
                      help="window end as ISO date (YYYY-MM-DD); defaults to now")
     rep.set_defaults(func=_cmd_report)
+
+    sy = sub.add_parser("sync", help="local↔cloud bridge: push deltas / pull-and-apply approved actions")
+    sy.add_argument("action", choices=["push", "pull-and-apply", "daemon"])
+    sy.add_argument("--home", default=str(Path.home() / ".forge" / "default"))
+    sy.add_argument("--url", default=None,
+                    help="dashboard base URL (default $FORGE_SYNC_URL)")
+    sy.add_argument("--token", default=None,
+                    help="shared secret (default $SYNC_SHARED_SECRET)")
+    sy.add_argument("--interval", type=int, default=300,
+                    help="daemon: seconds between cycles (clamped to 60+)")
+    sy.set_defaults(func=_cmd_sync)
 
     return p
 
