@@ -18,6 +18,12 @@ class Tool(ABC):
     description: ClassVar[str] = ""
     parameters: ClassVar[dict[str, Any]] = {"type": "object", "properties": {}}
     tier: ClassVar[Tier] = "mcp"
+    # If True, the tool has no observable side effects on shared state for the
+    # given inputs and may be batched in parallel with other concurrency-safe
+    # calls. Default is False (conservative — write tools, shell, MCP RPCs that
+    # mutate remote state). Read-only tools (fs_read, grep, http_fetch, search)
+    # should override to True. Pattern lifted from Claude Code's Tool.isConcurrencySafe.
+    concurrency_safe: ClassVar[bool] = False
 
     @abstractmethod
     async def execute(self, call: "ToolCall", agent: "AgentDef") -> "ToolResult":
@@ -29,4 +35,5 @@ class Tool(ABC):
             "description": self.description,
             "parameters": self.parameters,
             "tier": self.tier,
+            "concurrency_safe": self.concurrency_safe,
         }

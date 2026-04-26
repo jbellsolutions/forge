@@ -38,6 +38,11 @@ class HookContext:
         self.notes.append(msg)
         self.verdict = Verdict.BLOCKED
 
+    def safety_block(self, msg: str) -> None:
+        """Bypass-immune block. Stands regardless of permission_mode/AUTO."""
+        self.notes.append(msg)
+        self.verdict = Verdict.SAFETY_BLOCKED
+
 
 # Hook signatures. Hooks may be sync or async; the bus awaits both.
 PreHook = Callable[[HookContext], Awaitable[None] | None]
@@ -58,6 +63,8 @@ class HookBus:
         self._session_end: list[SessionHook] = []
         self._pre_tool: list[PreHook] = []
         self._post_tool: list[PostHook] = []
+        self._stop: list[SessionHook] = []
+        self._pre_compact: list[SessionHook] = []
 
     # registration ---------------------------------------------------------
     def on_session_start(self, fn: SessionHook) -> SessionHook:
@@ -72,6 +79,18 @@ class HookBus:
     def on_post_tool(self, fn: PostHook) -> PostHook:
         self._post_tool.append(fn); return fn
 
+    def on_stop(self, fn: SessionHook) -> SessionHook:
+        """Fires when the loop is about to terminate a turn (no more tool calls).
+        Use for end-of-turn reflection, recursion proposer triggers, final logging."""
+        self._stop.append(fn); return fn
+
+    def on_pre_compact(self, fn: SessionHook) -> SessionHook:
+        """Fires before the agent's working context is compacted.
+        Use to persist anything the optimizer needs at full fidelity *before*
+        the compactor rewrites history. Does NOT affect TraceStore (which is
+        always full-fidelity by invariant)."""
+        self._pre_compact.append(fn); return fn
+
     # dispatch -------------------------------------------------------------
     async def fire_session_start(self, ctx: HookContext) -> None:
         for h in self._session_start:
@@ -79,6 +98,14 @@ class HookBus:
 
     async def fire_session_end(self, ctx: HookContext) -> None:
         for h in self._session_end:
+            await _maybe_await(h(ctx))
+
+    async def fire_stop(self, ctx: HookContext) -> None:
+        for h in self._stop:
+            await _maybe_await(h(ctx))
+
+    async def fire_pre_compact(self, ctx: HookContext) -> None:
+        for h in self._pre_compact:
             await _maybe_await(h(ctx))
 
     async def fire_pre_tool(self, ctx: HookContext) -> Verdict:
@@ -101,7 +128,12 @@ async def _maybe_await(x: Any) -> Any:
     return x
 
 
-_VERDICT_RANK = {Verdict.READY: 0, Verdict.WARNING: 1, Verdict.BLOCKED: 2}
+_VERDICT_RANK = {
+    Verdict.READY: 0,
+    Verdict.WARNING: 1,
+    Verdict.BLOCKED: 2,
+    Verdict.SAFETY_BLOCKED: 3,  # bypass-immune
+}
 
 
 def _max_severity(a: Verdict, b: Verdict) -> Verdict:

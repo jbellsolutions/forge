@@ -7,6 +7,33 @@ All notable changes to forge are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **L3 `DenialTracker`** (`forge.DenialTracker`) — prevents pathological
+  denied-tool loops. Records (agent, tool, args) → recent denials; after
+  `max_repeats=3` denials within `window_seconds=600`, subsequent calls
+  emit `Verdict.SAFETY_BLOCKED` (bypass-immune). Auto-wired by
+  `attach_healing()` and exposed as `circuits.denials`. Lifted from
+  Claude Code's `permissions.ts` denial state tracking.
+- **`Tool.concurrency_safe`** ClassVar (default `False`) — declares whether
+  a tool has no observable side effects on shared state and may be batched
+  in parallel. `FSReadTool` marked `True`. Surfaced in `Tool.schema()`
+  for downstream orchestrators. Lifted from Claude Code's
+  `Tool.isConcurrencySafe`.
+- **`FSWriteTool` read-before-write contract** — refuses to overwrite an
+  existing file unless the agent's `FSReadTool` recorded a fresh read of
+  it (or the caller passes `force=True`). Closes a stale-overwrite race
+  between parallel sub-agents. Read state lives on the paired
+  `FSReadTool._read_state`. Lifted from Claude Code's `FileEditTool`
+  `readFileState` check.
+- **`HookBus.on_stop` / `on_pre_compact`** — two new lifecycle events.
+  `Stop` fires when the loop is about to terminate a turn (final
+  reflection seam for the recursion proposer). `PreCompact` fires before
+  the agent's working context is compacted (does not affect TraceStore,
+  which is full-fidelity by invariant).
+- **`Verdict.SAFETY_BLOCKED`** — bypass-immune tier; stands regardless of
+  `permission_mode`/AUTO escalation. New `HookContext.safety_block(msg)`
+  helper. Severity ranking now `READY < WARNING < BLOCKED < SAFETY_BLOCKED`;
+  most-restrictive wins across multiple hooks. Lifted from Claude Code's
+  bypass-immune safety-check class.
 - "Skill obsession" guidance in `CLAUDE.md` and `AGENTS.md` — tells contributors
   and runtime agents to search forge's L5 (`SkillStore` + `SkillSearchIndex` +
   `autosynth` + `EvalGate`) before re-authoring a capability. Documentation

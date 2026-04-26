@@ -45,7 +45,9 @@ The agent loop, hook lifecycle, and provider abstraction.
   text on `max_turns` exit (fixes the empty-verdict bug when the loop
   terminates mid-tool-call).
 - `hooks.py::HookBus` — fires `SessionStart`, `PreToolUse`, `PostToolUse`,
-  `SessionEnd`. Each hook returns a `Verdict`: `READY` / `WARNING` / `BLOCKED`.
+  `Stop`, `PreCompact`, `SessionEnd`. Each hook returns a `Verdict`:
+  `READY` / `WARNING` / `BLOCKED` / `SAFETY_BLOCKED`. `SAFETY_BLOCKED` is
+  bypass-immune — no `permission_mode`/AUTO escalation can downgrade it.
   Dry-run is a first-class mode: hooks can short-circuit a tool call before
   side effects.
 - `profile.py::ProviderProfile` + `load_profile()` — YAML-driven model adapter.
@@ -88,8 +90,13 @@ JSONSchema (OpenHarness pattern).
 - `circuit_breaker.py::CircuitBreaker` — CLOSED → OPEN (3-fail trip) →
   HALF_OPEN (60-min cooldown, 50% recovery throughput). Ported from
   `social-sdr/scripts/self_heal.py`.
-- `hooks.py::attach_healing()` — wires per-tool breakers into the L0 hook
-  bus via `PostToolUse`. Healing is a hook subscriber, not a kernel mod.
+- `denial.py::DenialTracker` — prevents pathological denied-tool loops.
+  After N denials of the same `(agent, tool, args)` within a window, the
+  pre-tool hook emits `SAFETY_BLOCKED` (bypass-immune).
+- `hooks.py::attach_healing()` — wires per-tool breakers + the
+  `DenialTracker` into the L0 hook bus via `PreToolUse` / `PostToolUse`.
+  Healing is a hook subscriber, not a kernel mod. Returns the
+  `CircuitRegistry`; the bound tracker is exposed as `circuits.denials`.
 
 ## L4 — Swarm (`forge/swarm/`)
 

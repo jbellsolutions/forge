@@ -49,6 +49,7 @@ from .healing import (
     CircuitBreaker,
     CircuitRegistry,
     CircuitState,
+    DenialTracker,
     ErrorType,
     attach_healing,
     classify,
@@ -108,8 +109,8 @@ __all__ = [
     # L2 tools
     "Tool", "ToolRegistry",
     # L3 healing
-    "CircuitBreaker", "CircuitRegistry", "CircuitState", "ErrorType",
-    "attach_healing", "classify",
+    "CircuitBreaker", "CircuitRegistry", "CircuitState", "DenialTracker",
+    "ErrorType", "attach_healing", "classify",
     # L4 swarm
     "Consensus", "RoleAssignment", "RoleCouncilSpawner", "Spawner",
     "SwarmResult", "SwarmSpec", "Topology",

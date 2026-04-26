@@ -44,10 +44,18 @@ class AssistantTurn:
 
 
 class Verdict(str, Enum):
-    """Hook bus dry-run verdict (lifted from OpenHarness)."""
+    """Hook bus dry-run verdict (lifted from OpenHarness).
+
+    Severity ordering for the hook bus: READY < WARNING < BLOCKED < SAFETY_BLOCKED.
+    SAFETY_BLOCKED is bypass-immune — it stands regardless of `permission_mode`,
+    `bypass_permissions`, or any AUTO/PLAN escalation. Use for hard safety
+    invariants (path escapes, secret exfiltration, destructive ops without
+    explicit consent). All other verdicts may be downgraded by an AUTO mode.
+    """
     READY = "ready"
     WARNING = "warning"
     BLOCKED = "blocked"
+    SAFETY_BLOCKED = "safety_blocked"
 
 
 class PermissionMode(str, Enum):
