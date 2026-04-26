@@ -7,6 +7,21 @@ All notable changes to forge are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Self-improvement reporting (L7)** — daily/weekly digest aggregating
+  recursion ledger outcomes, skill creations + promotions + rollbacks,
+  denial-loop events, telemetry rollup, genome growth, and intel highlights.
+  Public surface: `Digest`, `build_digest`, `Delivery`, `MarkdownFileDelivery`,
+  `SlackMCPDelivery`, `make_delivery`, `deliver`. New CLI: `forge report
+  --period day|week --to file|slack-mcp|auto`. Heartbeat:
+  `examples/heartbeats/daily_report.md`. Privacy invariant enforced:
+  digest output never contains message content or vendor key prefixes;
+  regex-asserted in `tests/test_digest.py`. Slack delivery uses the
+  user's existing Slack MCP server via `MCPClientPool`; fails gracefully
+  to file delivery on any import / pool / tool-call error so the digest
+  is never lost.
+- **`heartbeat.run_one` accepts `command:` frontmatter** — runs an
+  arbitrary command (e.g. `forge report ...`) in addition to the
+  existing `agent:` mode. Backward-compatible.
 - **L3 `DenialTracker`** (`forge.DenialTracker`) — prevents pathological
   denied-tool loops. Records (agent, tool, args) → recent denials; after
   `max_repeats=3` denials within `window_seconds=600`, subsequent calls

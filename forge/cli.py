@@ -144,6 +144,37 @@ def _cmd_dashboard(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_report(args: argparse.Namespace) -> int:
+    """Build a digest and deliver it via the configured channel."""
+    import asyncio
+    from datetime import datetime, timezone
+    from .observability.delivery import deliver
+    from .observability.digest import build_digest
+
+    at = None
+    if args.at:
+        try:
+            at = datetime.strptime(args.at, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        except ValueError:
+            print(f"--at must be YYYY-MM-DD, got: {args.at}", file=sys.stderr)
+            return 2
+
+    home = Path(args.home)
+    digest = build_digest(home, period=args.period, at=at)
+    override = None if args.to == "auto" else args.to
+    meta = asyncio.run(deliver(home, digest, override=override))
+    print(json.dumps({
+        "period": args.period,
+        "kept": digest.kept_count,
+        "rolled": digest.rolled_count,
+        "denials": len(digest.denials),
+        "skill_events": len(digest.skills),
+        "cost_usd": digest.telemetry.total_cost_usd,
+        "delivery": meta,
+    }, indent=2, default=str))
+    return 0
+
+
 def _cmd_skill(args: argparse.Namespace) -> int:
     from .skills import SkillStore, SkillSearchIndex, evaluate
     store = SkillStore(args.root)
@@ -252,6 +283,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     mcp = sub.add_parser("mcp", help="run forge as a stdio MCP server")
     mcp.set_defaults(func=lambda a: __import__("forge.mcp_server", fromlist=["main"]).main())
+
+    rep = sub.add_parser("report", help="build + deliver a self-improvement digest")
+    rep.add_argument("--period", choices=["day", "week"], default="day")
+    rep.add_argument("--home", default=str(Path.home() / ".forge" / "default"))
+    rep.add_argument("--to", choices=["file", "slack-mcp", "auto"], default="auto",
+                     help="delivery channel; 'auto' reads <home>/delivery.yaml")
+    rep.add_argument("--at", default=None,
+                     help="window end as ISO date (YYYY-MM-DD); defaults to now")
+    rep.set_defaults(func=_cmd_report)
 
     return p
 

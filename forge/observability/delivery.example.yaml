@@ -1,0 +1,36 @@
+# forge delivery config — copy to ~/.forge/delivery.yaml and edit.
+#
+# Three channels supported in v1: `file` (always works) and `slack-mcp`
+# (uses the user's already-configured Slack MCP server). Pick one.
+
+# --- File only (the default) -------------------------------------------------
+# channel: file
+
+# --- Slack via the user's Slack MCP server ----------------------------------
+channel: slack-mcp
+
+slack:
+  # Channel name or Slack ID to post into.
+  channel: "#forge-updates"
+
+  # The MCP tool name on your Slack connector that posts a message.
+  # Common values across connectors:
+  #   - slack_send_message      (most "MCP server slack" implementations)
+  #   - chat.postMessage        (raw Slack web API style)
+  #   - send_message            (some community connectors)
+  tool_name: slack_send_message
+  # If your connector names the args differently, override here.
+  channel_arg: channel
+  text_arg: text
+
+  # MCP server config — same shape forge's load_mcp_servers expects.
+  # If you already use a Slack MCP server in another forge example
+  # (see examples/operator_real/mcp.json), copy its block in here.
+  server:
+    command: npx
+    args:
+      - "-y"
+      - "@modelcontextprotocol/server-slack"
+    env:
+      SLACK_BOT_TOKEN: "${SLACK_BOT_TOKEN}"  # auto-loaded from ~/.forge/.env
+      SLACK_TEAM_ID: "${SLACK_TEAM_ID}"

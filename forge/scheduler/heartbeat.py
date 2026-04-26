@@ -45,27 +45,35 @@ async def run_one(path: Path, *, log_dir: Path | None = None) -> dict[str, Any]:
     title = path.stem
     started = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
 
-    # The "execution" of a heartbeat in this scaffold is to invoke the configured
-    # vertical's run.py via subprocess if `agent` is set, otherwise to log.
+    # Three execution modes:
+    #   1. `command: forge report --period day --to auto`  → run via /bin/sh -c
+    #   2. `agent: <name>`                                  → run examples/<name>/run.py
+    #   3. (neither)                                        → log only
+    import shlex
     import subprocess
     import sys
     repo_root = Path(__file__).resolve().parents[2]
-    target = None
-    if "agent" in fm:
+    target_cmd: list[str] | None = None
+    if "command" in fm and fm["command"]:
+        # `command` may be a string ("forge report ...") or a list.
+        cmd = fm["command"]
+        target_cmd = shlex.split(cmd) if isinstance(cmd, str) else [str(c) for c in cmd]
+    elif "agent" in fm:
         candidate = repo_root / "examples" / fm["agent"] / "run.py"
         if candidate.exists():
-            target = candidate
+            target_cmd = [sys.executable, str(candidate)]
 
     record: dict[str, Any] = {
         "started": started,
         "heartbeat": title,
         "schedule": fm.get("schedule", "ad-hoc"),
         "agent": fm.get("agent"),
+        "command": fm.get("command"),
     }
-    if target:
+    if target_cmd:
         try:
             proc = await asyncio.create_subprocess_exec(
-                sys.executable, str(target),
+                *target_cmd,
                 stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
             )
             stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=600)
@@ -77,7 +85,7 @@ async def run_one(path: Path, *, log_dir: Path | None = None) -> dict[str, Any]:
             record["error"] = "timeout"
     else:
         record["returncode"] = 0
-        record["note"] = "no agent target; logged only"
+        record["note"] = "no agent target or command; logged only"
 
     record["ended"] = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
     if log_dir:
