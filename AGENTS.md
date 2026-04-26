@@ -103,3 +103,32 @@ scheduler reads frontmatter for cadence, the body is the prompt.
 Example: `examples/operator_real/heartbeats/morning_council.md` — runs
 daily at 9am, kicks a 3-member council on the day's priorities, writes
 results to the Obsidian vault.
+
+## Skill obsession (for agents built on forge)
+
+When you build an agent on forge — or when forge's own contributors add a
+new vertical — the first instinct should be: **does a skill already do this?**
+The L5 system (`SkillStore` + `SkillSearchIndex` + `autosynth` + `EvalGate`)
+exists so agents and humans don't re-author the same capability twice.
+
+For an agent at runtime, expose skill discovery as a tool the agent can call:
+
+```python
+from forge import SkillSearchIndex, SkillStore
+
+store = SkillStore(root=session_home / "skills")
+index = SkillSearchIndex(store)
+
+# Inside your agent's tool surface:
+def find_skill_for(task: str) -> list[str]:
+    return [s.name for s in index.search(task, k=3)]
+```
+
+Wire `find_skill_for` into your `ToolRegistry` and the agent will check
+before reaching for raw shell or LLM-only reasoning. Promotion of a new
+skill version goes through the same `EvalGate` that protects the harness
+itself — `MIN_SAMPLES=50`, `CONFIDENCE_MARGIN=0.05`. No vibes promotions.
+
+This obsession lives in *one* place — forge's own L5. If you find yourself
+adding a parallel skill registry on top of forge, stop: that's the failure
+mode this section exists to prevent.

@@ -6,6 +6,14 @@ All notable changes to forge are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- "Skill obsession" guidance in `CLAUDE.md` and `AGENTS.md` — tells contributors
+  and runtime agents to search forge's L5 (`SkillStore` + `SkillSearchIndex` +
+  `autosynth` + `EvalGate`) before re-authoring a capability. Documentation
+  only; no parallel skill registry, no new code. Fills the AGI-1 skill-master
+  Phase 5 (Obsession Injection) intent using forge's own L5 primitives instead
+  of a duplicate `.claude/skill-mastery/` store.
+
 ### Fixed
 - `HookBus.fire_pre_tool` now honors the `Verdict` returned by a hook handler,
   not just `ctx.verdict`. Earlier the return value was silently discarded,

@@ -117,3 +117,50 @@ docs/                     # additional design notes
 - Read `ETHOS.md` for what gets a PR rejected vs. landed fast.
 - Read `CONTRIBUTING.md` for dev setup and release process.
 - Open a draft PR early; small reviewable diffs win.
+
+## Skill Obsession
+
+Before writing any custom implementation for a capability that feels like it
+should already be a skill — **check first**. forge ships an L5 skill system;
+reinventing what `SkillStore` + `autosynth` + `EvalGate` already cover is the
+fastest way to get a PR rejected (see ETHOS.md).
+
+Skill discovery flow (use forge's own L5, not a parallel registry):
+
+```bash
+forge skill list                    # what's installed in this session home
+forge skill search "<keyword>"      # vector-indexed search over body + outcomes
+forge skill autosynth <name>        # propose v_next from runs.jsonl history
+forge skill promote <name> <ver>    # gated by EvalGate (MIN_SAMPLES + CONFIDENCE_MARGIN)
+```
+
+Programmatic equivalents:
+
+```python
+from forge import SkillStore, SkillSearchIndex, autosynth, evaluate, promote_if_passing
+store = SkillStore(root=session_home / "skills")
+SkillSearchIndex(store).search("deploy to fly.io")
+```
+
+Rules of engagement:
+
+1. **Search before writing.** If `SkillSearchIndex.search(...)` returns a
+   skill that covers the need, use it. Don't re-author the same logic.
+2. **No parallel skill registries.** Don't add a `.claude/skill-mastery/`
+   directory or any other store that mirrors what `SkillStore` already does.
+   forge has one skill source of truth: `<home>/skills/<name>/{SKILL.md,
+   runs.jsonl}`.
+3. **Log every run.** Every skill invocation appends a `SkillRun` to that
+   skill's version's `runs.jsonl` — that's the data `autosynth` and `EvalGate`
+   read. Skipping the log starves the L5 loop.
+4. **Promotion is eval-gated, not vibes-gated.** Never bypass `EvalGate`
+   (MIN_SAMPLES=50, CONFIDENCE_MARGIN=0.05). That gate is a hard rule from
+   ETHOS.md.
+5. **Creating a new skill?** Use `store.write_skill(name, body, version="v1")`
+   (body is a markdown `SKILL.md` with frontmatter — name, description,
+   allowed_tools). `set_current(name, version)` switches the active version.
+   No external scaffolder needed.
+
+This is the forge-native version of the AGI-1 "skill obsession" pattern —
+same intent (look before you write), implemented through forge's own L5
+primitives instead of a duplicate registry.
