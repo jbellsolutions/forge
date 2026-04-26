@@ -2,9 +2,11 @@
 from .claude_dir import ClaudeDir
 from .git_journal import GitJournal
 from .obsidian import Note, ObsidianVault, index_into_reasoning_bank
+from .promotion import PromotionResult, promote
 from .reasoning_bank import Memory, ReasoningBank
 
 __all__ = [
     "ClaudeDir", "GitJournal", "Memory", "Note",
-    "ObsidianVault", "ReasoningBank", "index_into_reasoning_bank",
+    "ObsidianVault", "PromotionResult", "ReasoningBank",
+    "index_into_reasoning_bank", "promote",
 ]

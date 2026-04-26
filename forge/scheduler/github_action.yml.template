@@ -1,0 +1,40 @@
+# forge — nightly self-improve via GitHub Actions
+#
+# Save as .github/workflows/forge-nightly.yml
+#
+# Required secrets in repo settings:
+#   ANTHROPIC_API_KEY  (required for live recursion)
+#   COMPOSIO_API_KEY   (optional)
+
+name: forge-nightly
+on:
+  schedule:
+    - cron: "30 9 * * *"   # 02:30 PT, 09:30 UTC
+  workflow_dispatch: {}
+
+jobs:
+  recurse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install forge
+        run: pip install -e ".[anthropic,mcp]"
+
+      - name: Run nightly recurse loop
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          forge recurse-loop --home ./.forge/ci-default -n 5
+
+      - name: Commit ledger + claude/ updates
+        run: |
+          git config user.name "forge-bot"
+          git config user.email "forge@local"
+          git add -A .forge/ || true
+          git diff --cached --quiet || git commit -m "forge nightly $(date -u +%FT%TZ)"
+          git push || true

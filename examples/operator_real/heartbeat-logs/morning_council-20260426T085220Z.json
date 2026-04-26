@@ -1,0 +1,10 @@
+{
+  "started": "2026-04-26T08:52:19+00:00",
+  "heartbeat": "morning_council",
+  "schedule": "07:00 weekdays",
+  "agent": "operator_real",
+  "returncode": 0,
+  "stdout_tail": "[operator] MOCK mode (ANTHROPIC_API_KEY empty); behaviour identical, no spend\n[operator] mcp servers loaded: ['fs_vault']\n[operator] mcp tools: ['fs_vault__read_file', 'fs_vault__read_text_file', 'fs_vault__read_media_file', 'fs_vault__read_multiple_files', 'fs_vault__write_file', 'fs_vault__edit_file', 'fs_vault__create_directory', 'fs_vault__list_directory', 'fs_vault__list_directory_with_sizes', 'fs_vault__directory_tree', 'fs_vault__move_file', 'fs_vault__search_files', 'fs_vault__get_file_info', 'fs_vault__list_allowed_directories']\n[operator] council verdict: 'SHIP\\nReasonable to proceed.'\n[operator] telemetry summary:\n{\n  \"sessions\": 3,\n  \"total_input_tokens\": 180,\n  \"total_output_tokens\": 36,\n  \"total_cost_usd\": 0.00039,\n  \"tool_counts\": {}\n}\n[operator] vault notes -> /Users/home/.forge/vault\n",
+  "stderr_tail": "Secure MCP Filesystem Server running on stdio\nClient does not support MCP Roots, using allowed directories set from server args: [ '/Users/home/.forge/vault' ]\n",
+  "ended": "2026-04-26T08:52:20+00:00"
+}

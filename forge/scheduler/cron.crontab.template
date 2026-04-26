@@ -1,0 +1,18 @@
+# forge — example crontab
+#
+# Install:
+#   crontab -l > /tmp/cron.bak
+#   cat forge/scheduler/cron.crontab.template >> /tmp/cron.bak
+#   crontab /tmp/cron.bak
+#
+# Replace ${FORGE_BIN} with the absolute path to your venv's `forge` binary, e.g.:
+#   /Users/you/Desktop/forge/.venv/bin/forge
+#
+# Replace ${FORGE_HOME} with the home dir for the persona you want to recurse
+# against, e.g. /Users/you/.forge/operator-real
+
+# Run all heartbeats every weekday at 07:00 local time
+0 7 * * 1-5 cd ${FORGE_HOME} && ${FORGE_BIN} heartbeat run --dir ${FORGE_HOME}/.claude/heartbeats >> ${FORGE_HOME}/heartbeat.log 2>&1
+
+# Nightly self-improve loop (5 iterations) at 02:30 local time
+30 2 * * * ${FORGE_BIN} recurse-loop --home ${FORGE_HOME} -n 5 >> ${FORGE_HOME}/recurse.log 2>&1

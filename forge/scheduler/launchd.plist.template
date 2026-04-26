@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  forge launchd template — macOS
+
+  Install:
+    cp forge/scheduler/launchd.plist.template ~/Library/LaunchAgents/com.forge.recurse.plist
+    # Edit paths to match your install
+    launchctl load ~/Library/LaunchAgents/com.forge.recurse.plist
+
+  This runs the nightly recurse-loop at 02:30 every day.
+  Replace FORGE_BIN and FORGE_HOME below.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.forge.recurse</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>FORGE_BIN</string>
+        <string>recurse-loop</string>
+        <string>--home</string>
+        <string>FORGE_HOME</string>
+        <string>-n</string>
+        <string>5</string>
+    </array>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>2</integer>
+        <key>Minute</key>
+        <integer>30</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>FORGE_HOME/recurse.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>FORGE_HOME/recurse.stderr.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+        <!--
+        <key>ANTHROPIC_API_KEY</key>
+        <string>sk-ant-...</string>
+        -->
+    </dict>
+</dict>
+</plist>
