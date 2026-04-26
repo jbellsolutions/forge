@@ -1,0 +1,61 @@
+---
+description: forge SDK contributor rules
+globs: forge/**/*.py, tests/**/*.py, examples/**/*.py
+alwaysApply: true
+---
+
+# forge contributor rules (Cursor)
+
+forge is an 8-layer Python agent harness. Layer ordering is the single most
+important rule. Read `ARCHITECTURE.md` and `ETHOS.md` once before contributing.
+
+## Layer ordering (NEVER violate)
+
+L0 kernel imports nothing above. L1–L7 import only from layers strictly
+below. The hook bus (`forge.kernel.HookBus`) is the cross-cutting seam —
+higher layers subscribe; they don't reach down through internals.
+
+```
+L7 observability
+L6 use-case (examples/)
+L5 skills
+L4 swarm
+L3 healing
+L2 tools
+L1 memory
+L0 kernel + providers
+```
+
+## Hard rules
+
+- `from __future__ import annotations` at the top of every module.
+- Type hints on every public function.
+- Lazy-import vendor SDKs (`anthropic`, `openai`, `mcp`, `composio`,
+  `opentelemetry`) inside the constructor of the class that needs them.
+- Public API is mirrored from `forge/__init__.py.__all__`. Removing a
+  symbol bumps minor and needs a CHANGELOG entry.
+- Never modify lines below `# === FIXED ADAPTER BOUNDARY ===` — that
+  sentinel is the recursion proposer's contract.
+- Never compact trace files (`traces/<run_id>/*.jsonl`) before the
+  recursion proposer reads them.
+
+## Adding a primitive
+
+1. Pick the right layer.
+2. Re-export from the layer's `__init__.py` and `forge/__init__.py.__all__`.
+3. Add tests under `tests/test_<layer>.py` (no API keys required for the
+   default suite).
+4. Update `CHANGELOG.md` under "Unreleased".
+
+## Test discipline
+
+- Default suite (`pytest -q`) must pass without network or API keys.
+- Live tests gate on env vars and use `@pytest.mark.live`.
+- `forge doctor` must stay green on a fresh clone.
+
+## Naming
+
+- PyPI distribution: `forge-harness`.
+- Python import: `forge`.
+- CLI: `forge`.
+- MCP tool prefix: `forge_*`.

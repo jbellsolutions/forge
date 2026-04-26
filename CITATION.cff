@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+title: "forge: a model-agnostic, self-learning, self-healing agent harness"
+message: "If you use forge in academic work, please cite it."
+type: software
+authors:
+  - given-names: Justin
+    family-names: Bell
+    email: justin@usingaitoscale.com
+    affiliation: jbellsolutions
+repository-code: "https://github.com/jbellsolutions/forge"
+url: "https://github.com/jbellsolutions/forge"
+abstract: >
+  forge is a Python SDK for building agent systems decoupled from any single
+  model provider. It implements an 8-layer harness — kernel, memory, tools,
+  healing, swarm, skills, use-case, observability — with provider-as-profile
+  YAML adapters, full-fidelity trace persistence, eval-gated skill autosynthesis,
+  topology × consensus swarm primitives, and a recursive self-modification loop
+  honoring the AutoAgent regularizer.
+keywords:
+  - llm
+  - agent
+  - agent-harness
+  - mcp
+  - self-healing
+  - self-improvement
+  - reasoning-bank
+  - circuit-breaker
+license: MIT
+version: 0.1.1
+date-released: 2026-04-26
+preferred-citation:
+  type: software
+  title: "forge: a model-agnostic, self-learning, self-healing agent harness"
+  authors:
+    - given-names: Justin
+      family-names: Bell
+  year: 2026
+  url: "https://github.com/jbellsolutions/forge"
+  version: 0.1.1

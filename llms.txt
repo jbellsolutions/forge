@@ -1,0 +1,70 @@
+# forge
+
+> Model-agnostic, self-learning, self-healing agent harness — a Python SDK
+> that decouples the agent chassis from the model and the use case. Same
+> kernel runs SDR, COO, and code-agent verticals; swap the model by
+> changing one YAML profile.
+
+forge implements an 8-layer harness with strict layer ordering, a hook bus
+as the only cross-cutting seam, full-fidelity trace persistence, eval-gated
+skill autosynthesis, topology × consensus swarm primitives, and a recursive
+self-modification loop honoring the AutoAgent regularizer ("would this
+still help if this specific task vanished?").
+
+PyPI: `pip install forge-harness`
+Import: `import forge`
+GitHub: https://github.com/jbellsolutions/forge
+Version: 0.1.1
+
+## Docs
+
+- [README](README.md): full product narrative + research story + live verification table
+- [ARCHITECTURE](ARCHITECTURE.md): 8-layer map, hook bus, recursion seam, filesystem contract
+- [ETHOS](ETHOS.md): design philosophy, non-goals, what gets a PR rejected vs. landed
+- [AGENTS](AGENTS.md): reference verticals (operator, operator_real, recursion_demo) and role injection
+- [CONTRIBUTING](CONTRIBUTING.md): dev setup, layer rules, release process
+- [SECURITY](SECURITY.md): vulnerability disclosure
+- [CHANGELOG](CHANGELOG.md): version history starting at 0.1.0
+
+## Public API surface (re-exported from `forge/__init__.py`)
+
+- L0 kernel: `AgentDef`, `AgentLoop`, `AssistantTurn`, `HookBus`, `HookContext`, `LoopResult`, `Message`, `PermissionMode`, `ProviderProfile`, `ToolCall`, `ToolResult`, `Verdict`, `load_profile`
+- L1 memory: `ClaudeDir`, `GitJournal`, `Memory`, `Note`, `ObsidianVault`, `PromotionResult`, `ReasoningBank`, `genome`, `genome_path`, `promote`
+- L2 tools: `Tool`, `ToolRegistry`
+- L3 healing: `CircuitBreaker`, `CircuitRegistry`, `CircuitState`, `ErrorType`, `attach_healing`, `classify`
+- L4 swarm: `Consensus`, `RoleAssignment`, `RoleCouncilSpawner`, `Spawner`, `SwarmResult`, `SwarmSpec`, `Topology`
+- L5 skills: `CONFIDENCE_MARGIN`, `EvalReport`, `MIN_SAMPLES`, `SkillRun`, `SkillSearchIndex`, `SkillStore`, `autosynth`, `evaluate`, `promote_if_passing`
+- L7 observability: `SessionStat`, `Telemetry`, `TraceStore`
+- Providers: `Provider`, `make_provider`
+- Recursion: `HarnessDiff`, `RecurseResult`, `ResultsLedger`, `TraceAnalyzer`, `propose`, `propose_with_llm`, `recurse_once`
+
+## CLI
+
+```
+forge doctor             # environment audit
+forge run                # run a vertical
+forge recurse            # one self-mod cycle
+forge recurse-loop       # continuous self-mod
+forge dashboard          # read-only telemetry view
+forge skill {list,search,promote,autosynth}
+forge vault {note,backlinks,graph}
+forge heartbeat          # scheduler entry point
+forge mcp                # start forge-as-MCP server (12 tools)
+```
+
+## MCP server
+
+forge exposes 12 tools when run as an MCP server: `forge_council`,
+`forge_recurse`, `forge_vault_note`, `forge_vault_backlinks`,
+`forge_vault_graph`, `forge_memory_remember`, `forge_memory_recall`,
+`forge_memory_promote`, `forge_skill_search`, `forge_skill_run`,
+`forge_doctor`, `forge_dashboard`.
+
+## Claude Code integration
+
+Slash command `/forge` and skill `forge` ship in
+`~/.claude/commands/forge.md` and `~/.claude/skills/forge/SKILL.md`.
+
+## License
+
+MIT.
