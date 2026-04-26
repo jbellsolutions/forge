@@ -4,6 +4,17 @@ All notable changes to forge are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and forge adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) starting with v0.1.0.
 
+## [Unreleased]
+
+### Fixed
+- `HookBus.fire_pre_tool` now honors the `Verdict` returned by a hook handler,
+  not just `ctx.verdict`. Earlier the return value was silently discarded,
+  contradicting the documented "hooks return ready/warning/blocked" contract
+  (ARCHITECTURE.md, CLAUDE.md). Both patterns are now accepted; across multiple
+  hooks the most-restrictive verdict wins (BLOCKED > WARNING > READY).
+- Two regression tests added (`test_hook_return_verdict_honored`,
+  `test_hook_most_restrictive_wins`).
+
 ## [0.1.1] — 2026-04-26
 
 Documentation-only patch. README rewritten as a full product narrative —

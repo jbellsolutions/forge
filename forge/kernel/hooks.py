@@ -83,7 +83,11 @@ class HookBus:
 
     async def fire_pre_tool(self, ctx: HookContext) -> Verdict:
         for h in self._pre_tool:
-            await _maybe_await(h(ctx))
+            ret = await _maybe_await(h(ctx))
+            # Honor either pattern: hook returns a Verdict, or hook mutates ctx.verdict.
+            # Most-restrictive wins across multiple hooks (BLOCKED > WARNING > READY).
+            if isinstance(ret, Verdict):
+                ctx.verdict = _max_severity(ctx.verdict, ret)
         return ctx.verdict
 
     async def fire_post_tool(self, ctx: HookContext) -> None:
@@ -95,3 +99,10 @@ async def _maybe_await(x: Any) -> Any:
     if hasattr(x, "__await__"):
         return await x
     return x
+
+
+_VERDICT_RANK = {Verdict.READY: 0, Verdict.WARNING: 1, Verdict.BLOCKED: 2}
+
+
+def _max_severity(a: Verdict, b: Verdict) -> Verdict:
+    return a if _VERDICT_RANK[a] >= _VERDICT_RANK[b] else b

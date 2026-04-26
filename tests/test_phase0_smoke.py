@@ -99,3 +99,50 @@ async def test_unknown_tool_returns_error_not_crash():
     import pytest as _pt
     with _pt.raises(KeyError):
         await tools.execute(fake, agent)
+
+
+@pytest.mark.asyncio
+async def test_hook_return_verdict_honored() -> None:
+    """Regression: hooks returning a Verdict (instead of mutating ctx) must be honored.
+
+    Earlier `fire_pre_tool` discarded the handler return value and only read
+    `ctx.verdict`, contradicting the documented "hooks return ready/warning/blocked"
+    contract. Both patterns are now accepted; most-restrictive wins.
+    """
+    from forge.kernel import ToolCall
+
+    bus = HookBus()
+
+    @bus.on_pre_tool
+    async def gate(ctx: HookContext) -> Verdict:
+        if "rm" in str(ctx.tool_call.arguments):
+            return Verdict.BLOCKED
+        return Verdict.READY
+
+    safe = ToolCall(id="1", name="echo", arguments={"text": "hi"})
+    danger = ToolCall(id="2", name="shell", arguments={"cmd": "rm -rf /"})
+
+    v1 = await bus.fire_pre_tool(HookContext(session_id="s", agent_name="a", tool_call=safe))
+    v2 = await bus.fire_pre_tool(HookContext(session_id="s", agent_name="a", tool_call=danger))
+    assert v1 == Verdict.READY
+    assert v2 == Verdict.BLOCKED
+
+
+@pytest.mark.asyncio
+async def test_hook_most_restrictive_wins() -> None:
+    """Multiple hooks: the most-restrictive verdict wins (BLOCKED > WARNING > READY)."""
+    from forge.kernel import ToolCall
+
+    bus = HookBus()
+
+    @bus.on_pre_tool
+    async def warn_hook(ctx: HookContext) -> Verdict:
+        return Verdict.WARNING
+
+    @bus.on_pre_tool
+    async def ready_hook(ctx: HookContext) -> Verdict:
+        return Verdict.READY  # must NOT downgrade WARNING
+
+    call = ToolCall(id="1", name="echo", arguments={})
+    v = await bus.fire_pre_tool(HookContext(session_id="s", agent_name="a", tool_call=call))
+    assert v == Verdict.WARNING
