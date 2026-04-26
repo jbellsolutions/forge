@@ -96,10 +96,63 @@ def _cmd_recurse(args: argparse.Namespace) -> int:
         except json.JSONDecodeError:
             return 0.0
 
-    result = asyncio.run(recurse_once(home, provider, score_fn))
+    intel_ctx: str | None = None
+    if getattr(args, "with_intel", False):
+        intel_ctx = _load_intel_context(home)
+        if intel_ctx:
+            print(f"[recurse] injecting intel context: {len(intel_ctx)} chars")
+        else:
+            print("[recurse] --with-intel set but no intel found; running without")
+
+    result = asyncio.run(recurse_once(home, provider, score_fn, intel_context=intel_ctx))
     print(f"[recurse] diffs={len(result.diffs)} kept={result.kept} "
           f"base={result.base_score:.2f} cand={result.candidate_score:.2f}")
     return 0
+
+
+def _load_intel_context(home: Path) -> str | None:
+    """Load today's intel digest + most recent auto-research summary
+    as a single text block to inject into the recursion proposer.
+    Returns None if neither artifact exists.
+    """
+    import datetime as _dt
+    parts: list[str] = []
+    today = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%d")
+    intel_today = home / "intel" / f"{today}.json"
+    if intel_today.exists():
+        try:
+            items = json.loads(intel_today.read_text(encoding="utf-8"))
+            if isinstance(items, list) and items:
+                lines = ["### Industry signals (today)"]
+                for it in items[:12]:
+                    if isinstance(it, dict):
+                        rel = it.get("relevance", "?")
+                        lines.append(
+                            f"- [{rel}] {it.get('source','?')}: "
+                            f"{it.get('title','?')} ({it.get('url','')})"
+                        )
+                parts.append("\n".join(lines))
+        except (json.JSONDecodeError, OSError):
+            pass
+    ar_tsv = home / "intel" / "auto-research.tsv"
+    if ar_tsv.exists():
+        try:
+            import csv as _csv
+            with ar_tsv.open("r", encoding="utf-8") as f:
+                rows = list(_csv.DictReader(f, delimiter="\t"))
+            if rows:
+                last = max(rows, key=lambda r: float(r.get("ts", 0) or 0))
+                ref = last.get("summary_ref") or ""
+                if ref:
+                    refp = home / ref
+                    if refp.exists():
+                        parts.append(
+                            "### Auto-research summary (latest)\n"
+                            + refp.read_text(encoding="utf-8")[:4000]
+                        )
+        except (ValueError, OSError):
+            pass
+    return "\n\n".join(parts) if parts else None
 
 
 def _cmd_recurse_loop(args: argparse.Namespace) -> int:
@@ -243,6 +296,8 @@ def build_parser() -> argparse.ArgumentParser:
     rc = sub.add_parser("recurse", help="one self-mod cycle")
     rc.add_argument("--home", default=str(Path.home() / ".forge" / "default"))
     rc.add_argument("--profile", default="anthropic")
+    rc.add_argument("--with-intel", action="store_true",
+                    help="inject today's intel digest as proposer context")
     rc.set_defaults(func=_cmd_recurse)
 
     rl = sub.add_parser("recurse-loop", help="N self-mod cycles (cron-friendly)")

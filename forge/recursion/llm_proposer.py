@@ -76,6 +76,21 @@ def default_prompt(directive: str, symptoms: dict) -> str:
     )
 
 
+# Header prepended when intel_context is provided to propose_with_llm.
+# Wording is deliberate: signals are CONTEXT not LICENSE — the AutoAgent
+# regularizer still gates everything. If the proposer wants to mod forge to
+# match what e.g. OpenAI shipped this week, it must justify why that mod
+# would help even if THIS specific signal vanished.
+INTEL_PREAMBLE = """\
+## Recent industry signals (informational only)
+{context}
+
+The AutoAgent regularizer above STILL APPLIES: only propose mods that would
+help even if these specific signals vanished from the context tomorrow.
+Do not chase headlines. Do not overfit to one vendor's release notes.
+"""
+
+
 def parse_diffs(text: str) -> list[HarnessDiff]:
     """Tolerant JSON-array extraction — strips fences, finds first `[...]` block."""
     text = text.strip()
@@ -113,10 +128,21 @@ async def propose_with_llm(
     *,
     prompt_builder: PromptBuilder = default_prompt,
     directive: str = PROGRAM_DIRECTIVE,
+    intel_context: str | None = None,
 ) -> list[HarnessDiff]:
-    """Read traces, ask the model, return parsed HarnessDiffs."""
+    """Read traces, ask the model, return parsed HarnessDiffs.
+
+    `intel_context` is optional. When supplied (e.g. by the daily/weekly
+    auto-research cycle), it's prepended to the user prompt as informational
+    industry context. The AutoAgent regularizer in PROGRAM_DIRECTIVE is
+    NOT relaxed — intel is context, not license. When `intel_context is
+    None` the prompt is byte-identical to the pre-extension behavior;
+    `tests/test_intel_inject.py` regression-asserts this.
+    """
     symptoms = TraceAnalyzer(traces_root).symptoms()
     prompt = prompt_builder(directive, symptoms)
+    if intel_context:
+        prompt = INTEL_PREAMBLE.format(context=intel_context.strip()) + "\n" + prompt
     turn: AssistantTurn = await provider.generate(
         messages=[
             Message(role="system", content="You are forge's recursive self-mod proposer."),

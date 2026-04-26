@@ -48,14 +48,23 @@ async def recurse_once(
     margin: float = 0.0,
     suffix: str = "candidate",
     ledger_path: str | Path | None = None,
+    intel_context: str | None = None,
 ) -> RecurseResult:
+    """Run one self-mod cycle.
+
+    `intel_context` is optional industry-signal context (e.g. from the
+    daily/weekly auto-research cycle) that gets passed through to the
+    proposer. AutoAgent regularizer still gates everything; intel is
+    context, not license. When None, behavior is byte-identical to
+    pre-extension. The CLI's `--with-intel` flag populates this.
+    """
     home = Path(home)
     home.mkdir(parents=True, exist_ok=True)
     traces = home / "traces"
     traces.mkdir(exist_ok=True)
 
     # 1-2. Read traces, ask the model for diffs.
-    diffs = await propose_with_llm(provider, traces)
+    diffs = await propose_with_llm(provider, traces, intel_context=intel_context)
     if not diffs:
         _ledger(home, ledger_path).append(
             candidate=suffix, base_score=0.0, candidate_score=0.0, kept=False,
