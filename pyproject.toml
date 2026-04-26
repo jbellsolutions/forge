@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "forge"
+name = "forge-harness"
 version = "0.1.0"
 description = "Model-agnostic, self-learning, self-healing agent harness — Python SDK + Claude Code skill/slash/MCP"
 readme = "README.md"
