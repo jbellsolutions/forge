@@ -8,7 +8,8 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from ..memory.reasoning_bank import _cosine, _hash_embed
+from ..memory.embeddings import Embedder, hash_embedder
+from ..memory.reasoning_bank import _cosine
 from .skill import SkillStore
 
 
@@ -21,8 +22,9 @@ class SkillHit:
 
 
 class SkillSearchIndex:
-    def __init__(self, store: SkillStore) -> None:
+    def __init__(self, store: SkillStore, embedder: Embedder | None = None) -> None:
         self.store = store
+        self._embed = embedder or hash_embedder()
         self._index: dict[str, list[float]] = {}
         self.rebuild()
 
@@ -36,10 +38,10 @@ class SkillSearchIndex:
             runs = self.store.runs(skill)
             outcomes = " ".join(r.output[:120] for r in runs[-20:])
             corpus = f"{skill}\n{body}\n{outcomes}"
-            self._index[skill] = _hash_embed(corpus)
+            self._index[skill] = self._embed(corpus)
 
     def search(self, query: str, k: int = 5) -> list[SkillHit]:
-        q = _hash_embed(query)
+        q = self._embed(query)
         scored = [(name, _cosine(q, vec)) for name, vec in self._index.items()]
         scored.sort(reverse=True, key=lambda x: x[1])
         out: list[SkillHit] = []

@@ -1,36 +1,28 @@
 """ReasoningBank — Ruflo-shaped pattern memory.
 
 5-stage loop: RETRIEVE -> JUDGE -> DISTILL -> CONSOLIDATE -> ROUTE.
-Phase 5 ships an in-memory cosine-similarity store backed by hash embeddings;
-swap for ONNX MiniLM / OpenAI embeddings via the embedder injection point.
+Backed by a pluggable embedder (default = hash; swap for OpenAI / Voyage / ONNX).
 """
 from __future__ import annotations
 
 import hashlib
 import json
-import math
 import time
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-Embedder = Callable[[str], list[float]]
-
-
-def _hash_embed(text: str, dim: int = 256) -> list[float]:
-    """Cheap deterministic embedding. Real impl: ONNX MiniLM."""
-    vec = [0.0] * dim
-    for token in text.lower().split():
-        h = hashlib.md5(token.encode()).digest()
-        for i, b in enumerate(h):
-            vec[(i * 8 + b) % dim] += 1.0
-    n = math.sqrt(sum(v * v for v in vec)) or 1.0
-    return [v / n for v in vec]
+from .embeddings import Embedder, hash_embedder
 
 
 def _cosine(a: list[float], b: list[float]) -> float:
+    if len(a) != len(b):
+        return 0.0
     return sum(x * y for x, y in zip(a, b, strict=True))
+
+
+# Back-compat shim: tests / older callers still import _hash_embed
+_hash_embed = hash_embedder()
 
 
 @dataclass
@@ -56,7 +48,7 @@ class ReasoningBank:
         confidence_floor: float = 0.2,
     ) -> None:
         self._mems: dict[str, Memory] = {}
-        self._embed = embedder or _hash_embed
+        self._embed = embedder or hash_embedder()
         self._path = Path(path) if path else None
         self._floor = confidence_floor
         if self._path and self._path.exists():
