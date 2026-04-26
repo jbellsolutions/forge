@@ -192,8 +192,25 @@ def _cmd_recurse_loop(args: argparse.Namespace) -> int:
 
 
 def _cmd_dashboard(args: argparse.Namespace) -> int:
-    from .observability.dashboard import summarize
-    print(json.dumps(summarize(args.home), indent=2))
+    if not getattr(args, "serve", False):
+        from .observability.dashboard import summarize
+        print(json.dumps(summarize(args.home), indent=2))
+        return 0
+    # Live server mode (FastAPI) — requires [dashboard] extra.
+    if args.db:
+        os.environ["DATABASE_URL"] = args.db
+    try:
+        import uvicorn  # type: ignore
+        from .dashboard.bootstrap import main as bootstrap_main
+    except ImportError as e:
+        print(f"forge.dashboard requires the [dashboard] extra: {e}\n"
+              f"Install with: pip install 'forge-harness[dashboard]'",
+              file=sys.stderr)
+        return 2
+    bootstrap_main()
+    print(f"[dashboard] serving on http://{args.host}:{args.port}")
+    uvicorn.run("forge.dashboard.server:app", host=args.host, port=args.port,
+                log_level="info")
     return 0
 
 
@@ -369,6 +386,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     db = sub.add_parser("dashboard", help="telemetry + trace summary")
     db.add_argument("--home", default=".forge")
+    db.add_argument("--serve", action="store_true",
+                    help="boot the FastAPI dashboard (requires [dashboard] extra)")
+    db.add_argument("--port", type=int, default=8000)
+    db.add_argument("--host", default="127.0.0.1",
+                    help="default loopback for safety; pass 0.0.0.0 only when intentional")
+    db.add_argument("--db", default=None,
+                    help="DATABASE_URL override; defaults to env or sqlite local file")
     db.set_defaults(func=_cmd_dashboard)
 
     sk = sub.add_parser("skill")

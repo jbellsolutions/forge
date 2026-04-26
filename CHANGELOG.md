@@ -7,6 +7,24 @@ All notable changes to forge are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Dashboard scaffold (`forge.dashboard`, optional `[dashboard]` extra)** —
+  FastAPI + SQLModel + Jinja2 + HTMX + Tailwind (CDN). Three nav tabs:
+  Workspace · Changelog · Genome. Workspace = agents grouped by project
+  on left, orchestrator-chat panel + pending-actions card on right (chat
+  wired in C-2). Changelog = filtered feed of all self-improvement
+  events. Genome = paginated browse + search of cross-project memories.
+  Light-mode default (`bg-slate-50 text-slate-900`). Single-password
+  auth via bcrypt + signed cookies; OPEN MODE if `DASHBOARD_PASSWORD`
+  empty (loud warning logged). New CLI: `forge dashboard --serve` for
+  local dev (defaults loopback 127.0.0.1:8000). Sync API (`/sync/push`,
+  `/sync/pending`, `/sync/applied/{id}`) gates on `X-Forge-Sync-Token`
+  header matched against `SYNC_SHARED_SECRET` env. Pending-action
+  approve/reject endpoints return 409 on already-handled actions.
+  Idempotent upsert on sync push (re-running on the same data adds no
+  duplicates). Railway deploy config: `Procfile`, `railway.json`,
+  `RAILWAY_DEPLOY.md` runbook. ETHOS reversed: forge now ships a UI
+  AND a hosted-service config — concession to the principle that
+  invisible self-improvement isn't real.
 - **Web tools (L2 builtins)** — `WebSearchTool` and `WebFetchTool`.
   WebSearch backend autodetects: Tavily (`TAVILY_API_KEY`) → Brave
   (`BRAVE_API_KEY`) → DuckDuckGo HTML (no key, last-resort fallback so

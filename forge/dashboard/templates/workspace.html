@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Workspace{% endblock %}
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+  {# ─────── LEFT: Agents grouped by project ─────── #}
+  <section class="bg-white rounded-xl border border-slate-200">
+    <div class="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+      <h2 class="font-semibold text-sm tracking-wide uppercase text-slate-500">
+        Agents
+      </h2>
+      <span class="text-xs text-slate-400">{{ agents_total }} total</span>
+    </div>
+    <div class="divide-y divide-slate-100">
+      {% if not projects %}
+        <p class="p-8 text-sm text-slate-400 text-center">
+          No agents yet.<br>
+          Ask the orchestrator to spawn one →
+        </p>
+      {% endif %}
+      {% for proj in projects %}
+        <div class="px-5 py-3">
+          <h3 class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">
+            {{ proj.name }}
+          </h3>
+          <ul class="space-y-1">
+            {% for agent in by_proj.get(proj.id, []) %}
+              <li>
+                <button hx-get="/workspace/agents/{{ agent.id }}"
+                        hx-target="#agent-detail"
+                        hx-swap="innerHTML"
+                        class="w-full text-left px-2 py-1.5 rounded hover:bg-slate-50 flex items-center justify-between group">
+                  <span class="text-sm font-medium">{{ agent.name }}</span>
+                  <span class="text-xs text-slate-400">
+                    {{ agent.profile }}{% if agent.status != 'active' %} · {{ agent.status }}{% endif %}
+                  </span>
+                </button>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ─────── RIGHT: Orchestrator chat + Agent detail ─────── #}
+  <section class="space-y-6">
+    <div id="agent-detail" class="bg-white rounded-xl border border-slate-200 min-h-[8rem]">
+      <div class="px-5 py-3 border-b border-slate-200">
+        <h2 class="font-semibold text-sm tracking-wide uppercase text-slate-500">
+          Agent detail
+        </h2>
+      </div>
+      <p class="p-8 text-sm text-slate-400 text-center">
+        Click an agent on the left to see its full picture.
+      </p>
+    </div>
+
+    <div class="bg-white rounded-xl border border-slate-200">
+      <div class="px-5 py-3 border-b border-slate-200">
+        <h2 class="font-semibold text-sm tracking-wide uppercase text-slate-500">
+          Orchestrator
+          <span class="ml-2 inline-block px-2 py-0.5 text-[10px] rounded-full bg-slate-100 text-slate-500 font-normal">papa bear</span>
+        </h2>
+      </div>
+      <div id="chat-log" class="p-5 max-h-96 overflow-y-auto text-sm space-y-3">
+        <p class="text-slate-400 text-center py-6">
+          Orchestrator chat is wired in C-2.<br>
+          For now, agents are managed via the local <code>forge</code> CLI + sync push.
+        </p>
+      </div>
+      <form hx-post="/orchestrator/turn"
+            hx-target="#chat-log"
+            hx-swap="beforeend"
+            class="border-t border-slate-200 p-3 flex gap-2">
+        <input name="message" placeholder="Ask the orchestrator… (chat ships in C-2)"
+               disabled
+               class="flex-1 border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-400 cursor-not-allowed bg-slate-50">
+        <button type="submit" disabled
+                class="px-4 py-2 rounded-md bg-slate-200 text-slate-400 text-sm font-medium cursor-not-allowed">
+          Send
+        </button>
+      </form>
+    </div>
+
+    {% if pending %}
+    <div class="bg-amber-50 border border-amber-200 rounded-xl">
+      <div class="px-5 py-3 border-b border-amber-200">
+        <h2 class="font-semibold text-sm tracking-wide uppercase text-amber-700">
+          Pending actions ({{ pending|length }})
+        </h2>
+      </div>
+      <ul class="divide-y divide-amber-100">
+        {% for action in pending %}
+        <li class="p-4 flex items-start justify-between gap-3">
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-amber-900">{{ action.kind }}</p>
+            <p class="text-xs text-amber-700 mt-0.5 line-clamp-2 break-words">
+              {{ action.payload_json }}
+            </p>
+          </div>
+          <div class="flex gap-2 shrink-0">
+            <button hx-post="/actions/{{ action.id }}/approve"
+                    hx-swap="none"
+                    class="px-3 py-1.5 rounded-md bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700">
+              Approve
+            </button>
+            <button hx-post="/actions/{{ action.id }}/reject"
+                    hx-swap="none"
+                    class="px-3 py-1.5 rounded-md bg-slate-200 text-slate-700 text-xs font-medium hover:bg-slate-300">
+              Reject
+            </button>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </section>
+
+</div>
+{% endblock %}
