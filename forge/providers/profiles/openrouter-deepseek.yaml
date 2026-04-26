@@ -1,0 +1,10 @@
+name: openrouter-deepseek
+vendor: openai_compat
+model: deepseek/deepseek-chat
+max_tokens: 4096
+temperature: 0.7
+cost_tier: cheap
+failover: [anthropic-haiku]
+extra:
+  base_url: https://openrouter.ai/api/v1
+  api_key_env: OPENROUTER_API_KEY

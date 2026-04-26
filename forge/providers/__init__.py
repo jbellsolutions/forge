@@ -15,6 +15,9 @@ def make_provider(profile_name: str, **kwargs) -> Provider:
     if vendor == "anthropic":
         from .anthropic import AnthropicProvider
         return AnthropicProvider(profile, **kwargs)
+    if vendor == "openai_compat":
+        from .openai_compat import OpenAICompatProvider
+        return OpenAICompatProvider(profile, **kwargs)
     raise ValueError(f"unknown vendor {vendor!r} in profile {profile_name!r}")
 
 

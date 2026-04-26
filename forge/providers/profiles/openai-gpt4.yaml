@@ -1,0 +1,9 @@
+name: openai-gpt4
+vendor: openai_compat
+model: gpt-4o-mini
+max_tokens: 4096
+temperature: 0.7
+cost_tier: balanced
+failover: [openrouter-deepseek]
+extra:
+  api_key_env: OPENAI_API_KEY

@@ -1,0 +1,10 @@
+name: ollama-llama3
+vendor: openai_compat
+model: llama3.1:8b
+max_tokens: 4096
+temperature: 0.7
+cost_tier: free
+failover: []
+extra:
+  base_url: http://localhost:11434/v1
+  api_key_env: OLLAMA_API_KEY
