@@ -4,16 +4,37 @@ build-backend = "hatchling.build"
 
 [project]
 name = "forge"
-version = "0.0.1"
-description = "Model-agnostic, self-learning, self-healing agent harness"
+version = "0.1.0"
+description = "Model-agnostic, self-learning, self-healing agent harness — Python SDK + Claude Code skill/slash/MCP"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Justin Bell" }]
+keywords = ["agents", "llm", "harness", "swarm", "anthropic", "mcp", "claude", "openrouter", "composio", "self-modification"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
 dependencies = [
     "pyyaml>=6.0",
     "pydantic>=2.6",
 ]
+
+[project.urls]
+Homepage = "https://github.com/jbellsolutions/forge"
+Repository = "https://github.com/jbellsolutions/forge"
+Issues = "https://github.com/jbellsolutions/forge/issues"
+Changelog = "https://github.com/jbellsolutions/forge/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 anthropic = ["anthropic>=0.40.0"]
@@ -40,6 +61,11 @@ forge = "forge.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["forge"]
+artifacts = [
+    "forge/py.typed",
+    "forge/**/*.yaml",
+    "forge/scheduler/*.template",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
