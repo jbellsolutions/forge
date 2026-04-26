@@ -218,6 +218,24 @@ def _cmd_intel(args: argparse.Namespace) -> int:
             "store": meta,
         }, indent=2, default=str))
         return 0
+    if args.action == "research":
+        from .intel import AutoResearchBudget, run_auto_research
+        if not os.environ.get("ANTHROPIC_API_KEY", "").strip():
+            print("ANTHROPIC_API_KEY not set; auto-research requires a live provider", file=sys.stderr)
+            return 2
+        budget = AutoResearchBudget.weekly() if args.budget == "weekly" else AutoResearchBudget.daily()
+        result = asyncio.run(run_auto_research(
+            home, budget=budget, profile=args.profile,
+        ))
+        print(json.dumps({
+            "label": result.label, "profile": result.profile,
+            "turns": result.turns, "tool_calls": result.tool_calls,
+            "cost_usd": round(result.cost_usd, 6),
+            "summary_path": result.summary_path,
+            "truncated": result.truncated,
+            "error": result.error,
+        }, indent=2, default=str))
+        return 0 if result.error is None else 1
     if args.action == "show":
         from datetime import datetime, timezone
         date = args.at or datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -382,13 +400,17 @@ def build_parser() -> argparse.ArgumentParser:
     mcp = sub.add_parser("mcp", help="run forge as a stdio MCP server")
     mcp.set_defaults(func=lambda a: __import__("forge.mcp_server", fromlist=["main"]).main())
 
-    intel = sub.add_parser("intel", help="industry-signal pull / show")
-    intel.add_argument("action", choices=["pull", "show"])
+    intel = sub.add_parser("intel", help="industry-signal pull / research / show")
+    intel.add_argument("action", choices=["pull", "research", "show"])
     intel.add_argument("--home", default=str(Path.home() / ".forge" / "default"))
     intel.add_argument("--dry-run", action="store_true",
                        help="for `pull`: fetch + parse but do not write")
     intel.add_argument("--at", default=None,
                        help="for `show`: YYYY-MM-DD; defaults to today")
+    intel.add_argument("--budget", choices=["daily", "weekly"], default="daily",
+                       help="for `research`: turn / cost / tool-call budget")
+    intel.add_argument("--profile", default=None,
+                       help="for `research`: provider profile (defaults haiku for daily, sonnet for weekly)")
     intel.set_defaults(func=_cmd_intel)
 
     rep = sub.add_parser("report", help="build + deliver a self-improvement digest")

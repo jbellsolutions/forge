@@ -42,7 +42,7 @@ from .memory import (
 )
 
 # L2 tools
-from .tools import Tool, ToolRegistry
+from .tools import Tool, ToolRegistry, WebFetchTool, WebSearchTool
 
 # L3 healing
 from .healing import (
@@ -116,6 +116,8 @@ from .recursion import (
 from .intel import (
     DEFAULT_SOURCES,
     DOMAIN_ALLOWLIST,
+    AutoResearchBudget,
+    AutoResearchResult,
     IntelDigest,
     IntelItem,
     Source,
@@ -123,6 +125,7 @@ from .intel import (
     is_allowed,
     load_sources,
     pull_intel,
+    run_auto_research,
     store_items,
 )
 
@@ -137,7 +140,7 @@ __all__ = [
     "ClaudeDir", "GitJournal", "Memory", "Note", "ObsidianVault",
     "PromotionResult", "ReasoningBank", "genome", "genome_path", "promote",
     # L2 tools
-    "Tool", "ToolRegistry",
+    "Tool", "ToolRegistry", "WebFetchTool", "WebSearchTool",
     # L3 healing
     "CircuitBreaker", "CircuitRegistry", "CircuitState", "DenialTracker",
     "ErrorType", "attach_healing", "classify",
@@ -163,4 +166,5 @@ __all__ = [
     "DEFAULT_SOURCES", "DOMAIN_ALLOWLIST", "IntelDigest", "IntelItem",
     "Source", "build_intel_digest", "is_allowed", "load_sources",
     "pull_intel", "store_items",
+    "AutoResearchBudget", "AutoResearchResult", "run_auto_research",
 ]

@@ -12,6 +12,7 @@ Public surface:
 """
 from __future__ import annotations
 
+from .auto_research import AutoResearchBudget, AutoResearchResult, run_auto_research
 from .digest import IntelDigest, build_intel_digest
 from .fetch import pull_intel
 from .normalize import IntelItem, keyword_relevance, normalize_item
@@ -23,4 +24,5 @@ __all__ = [
     "IntelDigest", "build_intel_digest", "pull_intel",
     "load_sources", "is_allowed", "store_items",
     "keyword_relevance", "normalize_item",
+    "AutoResearchBudget", "AutoResearchResult", "run_auto_research",
 ]

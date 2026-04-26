@@ -7,6 +7,32 @@ All notable changes to forge are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Web tools (L2 builtins)** — `WebSearchTool` and `WebFetchTool`.
+  WebSearch backend autodetects: Tavily (`TAVILY_API_KEY`) → Brave
+  (`BRAVE_API_KEY`) → DuckDuckGo HTML (no key, last-resort fallback so
+  the auto-research sub-agent works on a fresh install). WebFetch is
+  domain-allowlisted (defaults to forge.intel allowlist; extensible via
+  `FORGE_WEB_FETCH_HOSTS=...`); 8KB body cap; 12s timeout. Both tools
+  marked `concurrency_safe = True`. Lazy-imports the chosen vendor
+  client; no hard dep.
+- **AutoAgent-style active auto-research (`forge.intel.auto_research`)** —
+  spawns a tightly-scoped sub-agent (web_search + web_fetch +
+  intel_store_item only; no fs / shell / cli) with a system prompt
+  carrying the AutoAgent regularizer ("would this still matter if THIS
+  specific release vanished?"). `AutoResearchBudget.daily()` =
+  4 turns / 8 tool calls / $0.15. `weekly()` = 20/40/$1.00. Budget
+  enforced via a `PreToolUse` hook that returns `Verdict.SAFETY_BLOCKED`
+  on overrun; loop terminates cleanly with `truncated=true` in the
+  ledger row at `<home>/intel/auto-research.tsv`. Findings stored as
+  IntelItems via the existing intel store pipeline (vault + genome).
+  Reference: https://github.com/kevinrgu/autoagent — patterns to lift
+  on follow-up review tracked in TODOS.md.
+- **CLI: `forge intel research --budget {daily,weekly}`** plus
+  `forge recurse --with-intel` flag (the latter loads today's intel
+  digest + most recent auto-research summary as proposer context).
+- **Heartbeats**: `examples/heartbeats/daily_intel.md` (07:00 — pull +
+  research + recurse-with-intel) and `examples/heartbeats/weekly_research.md`
+  (Mondays 06:00 — heavy Sonnet research + recurse).
 - **Industry intel — passive pull pipeline (`forge.intel`)** — daily
   ingestion of RSS / Atom / GitHub releases / JSON changelogs / HTML
   pages from a hard-coded `DOMAIN_ALLOWLIST` (anthropic / openai /
