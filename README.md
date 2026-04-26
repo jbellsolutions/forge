@@ -1,8 +1,15 @@
 # forge
 
+[![PyPI](https://img.shields.io/pypi/v/forge-harness.svg)](https://pypi.org/project/forge-harness/)
+[![CI](https://github.com/jbellsolutions/forge/actions/workflows/ci.yml/badge.svg)](https://github.com/jbellsolutions/forge/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/pypi/pyversions/forge-harness.svg)](https://pypi.org/project/forge-harness/)
+
 Model-agnostic, self-learning, self-healing **agent harness** — and a Python SDK for building agent swarms.
 
 Drop into any project. Spin up parallel councils. Self-improve via recursion. Memory and skills compound across projects. Use it from code, from a CLI, or as a Claude Code slash command + MCP server.
+
+> **Distribution name:** `forge-harness` (on PyPI). **Import name:** `forge` (in Python). Same pattern as `pillow` → `import PIL`.
 
 ## Layers
 
@@ -17,18 +24,60 @@ L1  Memory         ReasoningBank · git journal · Obsidian vault · cross-proje
 L0  Kernel         Agent loop · hook lifecycle · provider-as-profile
 ```
 
+## Quickstart (60 seconds)
+
+```bash
+pip install "forge-harness[anthropic,mcp]"
+mkdir -p ~/.forge && echo "ANTHROPIC_API_KEY=sk-ant-..." > ~/.forge/.env && chmod 600 ~/.forge/.env
+forge doctor                                   # verify
+```
+
+```python
+import asyncio
+from forge import (
+    HookBus, ToolRegistry,
+    RoleCouncilSpawner, RoleAssignment, SwarmSpec, Topology, Consensus,
+    attach_healing,
+)
+
+async def main():
+    tools, hooks = ToolRegistry(), HookBus()
+    attach_healing(hooks)
+    s = RoleCouncilSpawner(tools=tools, hooks=hooks, max_turns=4)
+    s.set_assignments([
+        RoleAssignment(profile="anthropic",            role="optimist"),
+        RoleAssignment(profile="anthropic-haiku",      role="skeptic"),
+        RoleAssignment(profile="anthropic-contrarian", role="pragmatist"),
+    ])
+    result = await s.run(
+        "Should we ship today?",
+        SwarmSpec(topology=Topology.PARALLEL_COUNCIL, consensus=Consensus.MAJORITY,
+                  members=["anthropic", "anthropic-haiku", "anthropic-contrarian"]),
+    )
+    print("verdict:", result.verdict.winner)
+
+asyncio.run(main())
+```
+
 ## Install
 
 ```bash
-# From GitHub
-pip install git+https://github.com/jbellsolutions/forge.git#egg=forge[anthropic,mcp]
+# From PyPI (recommended)
+pip install forge-harness
 
-# Or local editable
+# With optional integrations
+pip install "forge-harness[anthropic,mcp]"        # add Anthropic SDK + MCP client
+pip install "forge-harness[all]"                  # everything: anthropic, openai, mcp, composio, otel, embeddings
+
+# From GitHub main
+pip install git+https://github.com/jbellsolutions/forge.git
+
+# Editable for development
 git clone https://github.com/jbellsolutions/forge.git
-cd forge && pip install -e ".[anthropic,mcp]"
+cd forge && pip install -e ".[dev,anthropic,mcp]"
 ```
 
-Optional extras: `anthropic`, `openai`, `mcp`, `composio`, `otel`, `embeddings`, `all`.
+Optional extras: `anthropic`, `openai`, `mcp`, `composio`, `otel`, `embeddings`, `dev`, `all`.
 
 ## Configure
 
