@@ -1,0 +1,10 @@
+name: anthropic
+vendor: anthropic
+model: claude-sonnet-4-5-20250929
+max_tokens: 4096
+temperature: 0.7
+cost_tier: balanced
+failover: [anthropic-haiku, openrouter-deepseek]
+extra:
+  prompt_format: messages_v1
+  tool_protocol: anthropic_tool_use

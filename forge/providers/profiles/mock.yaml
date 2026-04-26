@@ -1,0 +1,7 @@
+name: mock
+vendor: mock
+model: mock-1
+max_tokens: 4096
+temperature: 0.0
+cost_tier: free
+failover: []

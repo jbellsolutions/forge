@@ -1,0 +1,7 @@
+name: anthropic-haiku
+vendor: anthropic
+model: claude-haiku-4-5-20251001
+max_tokens: 4096
+temperature: 0.7
+cost_tier: cheap
+failover: []
