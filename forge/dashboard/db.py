@@ -140,6 +140,13 @@ def make_engine(database_url: str):
     connect_args: dict = {}
     if database_url.startswith("sqlite"):
         connect_args["check_same_thread"] = False
+    # We ship psycopg (v3), not psycopg2. SQLAlchemy's default postgres
+    # driver is psycopg2; rewrite to the psycopg3 dialect explicitly so
+    # Railway's postgresql:// URL works without extra deps.
+    if database_url.startswith("postgresql://"):
+        database_url = "postgresql+psycopg://" + database_url[len("postgresql://"):]
+    elif database_url.startswith("postgres://"):
+        database_url = "postgresql+psycopg://" + database_url[len("postgres://"):]
     return create_engine(database_url, echo=False, connect_args=connect_args)
 
 
