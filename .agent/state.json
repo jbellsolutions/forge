@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "last_session_id": null,
+  "last_session_at": null,
+  "last_audit_score": null,
+  "active_iterations": [],
+  "open_followups": [
+    "intel-pull-dry-run-seen-json-bug",
+    "daily-intel-and-auto-research-cron-not-installed",
+    "autoagent-repo-review-30min-scan"
+  ]
+}

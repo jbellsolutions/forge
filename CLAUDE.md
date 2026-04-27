@@ -8,6 +8,19 @@ Project-level instructions for Claude Code sessions working on forge.
 Read `ETHOS.md` and `ARCHITECTURE.md` before making non-trivial changes.
 Read `CONTRIBUTING.md` for dev setup and PR process.
 
+## Session start — read project memory first
+
+Before doing anything substantive, read in this order:
+
+1. `.claude/MEMORY.md` — index of what's stored where
+2. `.claude/memory/project.md` — what's been built, what's deployed, open follow-ups
+3. `.claude/memory/feedback.md` — explicit corrections from prior sessions
+
+Then load only what's relevant to the task. Don't blindly read everything.
+
+For a repo health brief (tests, git state, dashboard reachable, follow-ups),
+the Project Orchestrator at `.claude/agents/main-agent.md` runs the standard checks.
+
 ## Session checklist
 
 Run these at the start of every session:

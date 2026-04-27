@@ -1,0 +1,41 @@
+{
+  "name": "forge",
+  "description": "Model-agnostic, self-learning, self-healing agent harness + Python SDK to build agent swarms. Lives at github.com/jbellsolutions/forge, published as forge-harness on PyPI.",
+  "language": "python",
+  "version": "0.1.1",
+  "repo_path": "/Users/home/Desktop/forge",
+  "remote": "https://github.com/jbellsolutions/forge",
+  "key_components": [
+    {"path": "forge/kernel/", "role": "L0 — types, hooks, agent loop"},
+    {"path": "forge/tools/", "role": "L2 — tool registry + builtins (web_search, web_fetch, fs, etc.)"},
+    {"path": "forge/providers/", "role": "L3 — provider profiles (anthropic, openai, openrouter, etc.)"},
+    {"path": "forge/swarm/", "role": "L4 — RoleCouncilSpawner, SwarmSpec, topology + consensus"},
+    {"path": "forge/skills/", "role": "L5 — skill registry, eval gate, autosynth"},
+    {"path": "forge/memory/", "role": "L6 — ReasoningBank, genome, vault"},
+    {"path": "forge/observability/", "role": "L7 — telemetry, digest, delivery"},
+    {"path": "forge/recursion/", "role": "Cross-cut — self-mod proposer + ledger"},
+    {"path": "forge/intel/", "role": "Cross-cut — passive RSS pull + active auto-research"},
+    {"path": "forge/dashboard/", "role": "Optional [dashboard] extra — Railway-hosted FastAPI UI"},
+    {"path": "forge/sync/", "role": "Local↔cloud bridge"},
+    {"path": "forge/orchestrator/", "role": "Papa Bear chat agent for the dashboard"},
+    {"path": "forge/scaffolder/", "role": "`forge new` — describe a swarm in English, get a swarm"}
+  ],
+  "entry_points": [
+    "forge.cli:main (the `forge` console-script)",
+    "forge.dashboard.server:app (uvicorn entry, Procfile)",
+    "forge.mcp_server:main (forge as a stdio MCP server)"
+  ],
+  "fragile_areas": [
+    "forge/dashboard/db.py::make_engine — psycopg3 dialect rewrite for postgres URLs",
+    "forge/intel/fetch.py — atom parsing relies on Element.find returning None correctly (Python 3.14 changed Element.__bool__ semantics)",
+    "forge/recursion/llm_proposer.py — `intel_context=None` must remain byte-identical to pre-extension behavior"
+  ],
+  "deploy": {
+    "dashboard": "https://forge-web-production-da97.up.railway.app",
+    "railway_project_id": "d8c3eab5-f6dd-4433-a4f7-f46e0c01d720",
+    "railway_service_id": "6d162c95-2172-4493-a42b-9ea025478dd3"
+  },
+  "test_command": "pytest -q",
+  "test_count_baseline": 173,
+  "last_updated": "2026-04-27"
+}
