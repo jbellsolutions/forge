@@ -241,3 +241,41 @@ def test_chat_turn_iteration_cap(ses_factory) -> None:
                               max_tool_iterations=3)
     result = asyncio.run(agent.chat_turn("chat-cap", "loop forever"))
     assert "iteration cap" in result["reply"].lower()
+
+
+def test_chat_turn_assistant_tool_call_message_uses_provider_keys(ses_factory) -> None:
+    """Regression for the live-Railway 400: 'messages: text content blocks must
+    be non-empty'. When the orchestrator emits an assistant turn with tool_calls
+    and empty text, the provider expects metadata['raw_tool_calls'] with field
+    'arguments' (not metadata['tool_calls'] with field 'input'). Asserts the
+    second LLM call sees a properly-formed prior assistant message."""
+    from forge.orchestrator.agent import OrchestratorAgent
+
+    spawn_call = ToolCall(
+        id="t1", name="propose_spawn",
+        arguments={"project": "forge", "name": "x", "instructions": "y",
+                   "profile": "anthropic-haiku"},
+    )
+    turns = [
+        AssistantTurn(text="", tool_calls=[spawn_call],
+                      usage={"input_tokens": 1, "output_tokens": 1}),
+        AssistantTurn(text="ok", tool_calls=[],
+                      usage={"input_tokens": 1, "output_tokens": 1}),
+    ]
+    provider = ScriptedProvider(turns)
+    agent = OrchestratorAgent(ses_factory=ses_factory, provider=provider)
+    asyncio.run(agent.chat_turn("chat-meta", "spawn"))
+
+    # The second .generate() call sees a 3-message history: user, assistant
+    # (with raw_tool_calls), tool_result. Find the assistant message.
+    assert len(provider.calls) == 2
+    second_call_messages = provider.calls[1]
+    assistant_msgs = [m for m in second_call_messages if m.role == "assistant"]
+    assert len(assistant_msgs) == 1
+    am = assistant_msgs[0]
+    # The provider keys MUST be raw_tool_calls + arguments — anything else
+    # silently produces an empty content block and Anthropic 400s in prod.
+    rtc = am.metadata.get("raw_tool_calls")
+    assert rtc, f"missing raw_tool_calls; metadata was {am.metadata!r}"
+    assert "arguments" in rtc[0], f"expected 'arguments' key, got {list(rtc[0])}"
+    assert "input" not in rtc[0], "stale 'input' key would skip provider serialization"

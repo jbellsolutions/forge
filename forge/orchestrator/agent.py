@@ -202,9 +202,14 @@ class OrchestratorAgent:
                     "tool_calls": tool_log,
                 }
             # Run each tool call, append a tool_result message, loop.
+            # Provider's _to_anthropic reads metadata["raw_tool_calls"] with
+            # field "arguments". Match those keys exactly — otherwise the
+            # tool_use blocks vanish and Anthropic 400s on the empty assistant
+            # turn ("messages: text content blocks must be non-empty").
             messages.append(Message(role="assistant", content=turn.text or "",
-                                    metadata={"tool_calls": [
-                                        {"id": tc.id, "name": tc.name, "input": tc.arguments}
+                                    metadata={"raw_tool_calls": [
+                                        {"id": tc.id, "name": tc.name,
+                                         "arguments": tc.arguments}
                                         for tc in turn.tool_calls
                                     ]}))
             for tc in turn.tool_calls:
