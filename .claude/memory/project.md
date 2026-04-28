@@ -85,35 +85,43 @@ nothing ships unless it beats baseline. ~$0.10/day.
 
 ### What landed this session
 
-- **`Spawner.max_spawn_depth`** (commit pending) — new plumbing on
+- **`Spawner.max_spawn_depth`** committed as `1085ff6`. Plumbing on
   `forge/swarm/spawner.py`: Spawners can `make_child()` with depth budget,
   raising `SpawnDepthExceeded` on overflow. Per-level `max_turns` decays via
   `DEPTH_BUDGET_DECAY = 0.5`. Default `max_spawn_depth=0` preserves existing
   behaviour. New public exports: `DEPTH_BUDGET_DECAY`, `SpawnDepthExceeded`.
-  6 new tests in `tests/test_swarm_spawn_depth.py` (25/25 targeted slice green;
-  full-suite run silently hung in env — pre-existing, not from these edits).
-- Plan saved at `~/.claude/plans/alright-so-there-was-golden-pike.md`. User
-  approved the two-track approach; this session shipped only Track B.4.
+  6 new tests in `tests/test_swarm_spawn_depth.py` (all green; targeted +
+  adjacent swarm tests verified post-commit).
+- Plan saved at `~/.claude/plans/alright-so-there-was-golden-pike.md` —
+  updated with verification table + Track A no-go decision.
 
-### Decision reversal — Paperclip migration: planned, *not yet executed*
+### Verification pass — upstream IDs from the Hermes 0.11 video
 
-The 2026-04-26 entry below DEFERRED Paperclip on the basis that paperclip is
-multi-team-prod and forge is single-operator. The user revisited the call
-2026-04-27 after watching the Hermes 0.11 release video. **The original
-rationale still applies** (forge is still single-operator); the trigger is
-*user preference shift*, not a change in forge's deployment shape. Recorded
-explicitly so future-me knows the deferral logic still applies if scope shifts
-back.
+| Item | Status | Verified ID |
+|---|---|---|
+| Hermes repo | ✅ | `NousResearch/hermes-agent` v0.11.0 (2026-04-23) |
+| GPT-5.5 | ✅ | OpenAI 2026-04-23. API: `gpt-5.5` ($5/$30 per M); `gpt-5.5-pro` ($30/$180) |
+| DeepSeek v4 | ✅ | 2026-04-24 preview. `deepseek-v4-pro` (1.6T/49B), `deepseek-v4-flash` (284B/13B), 1M ctx, on OpenRouter |
+| Qwen 2.6 | ❌ wrong number | Actually **Qwen 3.6** family — `Qwen3.6-27B`, `Qwen3.6-Max-Preview` (Apr 2026) |
+| Xiaomi V2 Pro | ⚠️ wrong name | Actually **`MiMo-V2-Pro`** (1T/42B, $1/M input, 2026-03-18) and **`MiMo-V2.5-Pro`** (public beta 2026-04-22) |
+| Claude Opus 4.7 | ✅ | This session is running on it |
 
-Two unresolved risks before Track A starts:
+### Track A — DEFERRED (locked, not "pending direction")
 
-- **`paperclip-create-plugin` skill description says "current alpha SDK/runtime."**
-  Forge would be standing its only dashboard on an alpha plugin SDK. Surfaced
-  to user; pending direction.
-- **Upstream model/repo IDs from the Hermes video are unverified.** "GPT-5.5",
-  "DeepSeek v4", "Qwen 2.6", "Xiaomi V2 Pro", and the Hermes repo URL itself
-  weren't checked against vendor docs. Plan items B.2 (intel sources) and B.3
-  (provider profiles) blocked on a 5-min web-search verification pass.
+`paperclipai/paperclip/doc/plugins/PLUGIN_SPEC.md` opens with: "This is not
+part of the V1 implementation contract... It is the full target architecture
+for the plugin system that should follow V1." **Translation: there is no
+Paperclip plugin SDK shipped today — it's a design document.** The
+`paperclip-create-plugin` skill's "alpha SDK" self-description was optimistic.
+
+Decision: keep `forge/dashboard/` as the user-facing UI. Re-evaluate Track A
+only when Paperclip ships plugin SDK V1+ with a stability commitment.
+**Why:** standing forge's only dashboard on a non-existent plugin runtime is
+strictly worse than the original "alpha SDK" risk. Original 2026-04-26
+DEFERRED rationale (single-operator vs multi-team) still applies.
+**How to apply:** if user revisits the Paperclip pivot, first check
+`paperclipai/paperclip` for a shipped, versioned plugin SDK; if still spec-only,
+push back and propose deep-link integration instead of plugin coupling.
 
 ### Open follow-ups
 
