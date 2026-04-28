@@ -25,18 +25,64 @@ class SwarmResult:
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
+DEPTH_BUDGET_DECAY = 0.5  # max_turns at depth N is parent.max_turns * decay
+
+
+class SpawnDepthExceeded(RuntimeError):
+    """Raised when a Spawner with max_spawn_depth=0 is asked to spawn a child."""
+
+
 class Spawner:
+    """Sub-agent spawner.
+
+    `max_spawn_depth` controls how many levels of nested *Spawner-creates-Spawner*
+    a forge swarm may recurse. Zero (default) preserves pre-existing behaviour:
+    topologies fan out at one level, agents themselves cannot spawn further
+    Spawners. ≥1 enables the L4 `spawn_subagent` tool (registered separately) to
+    create a child Spawner whose own `max_spawn_depth` is decremented; reaching
+    zero refuses further spawning. Each nested level multiplies `max_turns` by
+    `DEPTH_BUDGET_DECAY` so deep recursion costs decay geometrically.
+
+    Topology fan-out (HIERARCHY queen→workers, PARALLEL_COUNCIL) is not "spawn"
+    in this sense — those agents are members of the *current* Spawner, not
+    children of it. `max_spawn_depth` only governs Spawner nesting.
+    """
+
     def __init__(
         self,
         tools: ToolRegistry,
         hooks: HookBus | None = None,
         base_instructions: str = "You are a member of a forge swarm.",
         max_turns: int = 6,
+        max_spawn_depth: int = 0,
+        _current_depth: int = 0,
     ) -> None:
         self.tools = tools
         self.hooks = hooks
         self.base_instructions = base_instructions
         self.max_turns = max_turns
+        self.max_spawn_depth = max_spawn_depth
+        self._current_depth = _current_depth
+
+    def make_child(self, *, base_instructions: str | None = None) -> "Spawner":
+        """Create a child Spawner with depth+1 and a decayed turn budget.
+
+        Raises `SpawnDepthExceeded` when this Spawner has no remaining depth
+        budget (`max_spawn_depth == 0`).
+        """
+        if self.max_spawn_depth <= 0:
+            raise SpawnDepthExceeded(
+                f"max_spawn_depth=0 at depth={self._current_depth}; cannot spawn child"
+            )
+        child_max_turns = max(1, int(self.max_turns * DEPTH_BUDGET_DECAY))
+        return Spawner(
+            tools=self.tools,
+            hooks=self.hooks,
+            base_instructions=base_instructions or self.base_instructions,
+            max_turns=child_max_turns,
+            max_spawn_depth=self.max_spawn_depth - 1,
+            _current_depth=self._current_depth + 1,
+        )
 
     async def run(self, task: str, spec: SwarmSpec) -> SwarmResult:
         if spec.topology == Topology.SOLO:

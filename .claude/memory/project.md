@@ -81,6 +81,40 @@ Everything else flows through orchestrator → PendingAction → Approve.
 **Intel autonomy:** auto-recurse daily, eval-gated. EvalGate guards every mod;
 nothing ships unless it beats baseline. ~$0.10/day.
 
+## § 2026-04-27 — Hermes 0.11 reaction; B.4 spawn-depth landed
+
+### What landed this session
+
+- **`Spawner.max_spawn_depth`** (commit pending) — new plumbing on
+  `forge/swarm/spawner.py`: Spawners can `make_child()` with depth budget,
+  raising `SpawnDepthExceeded` on overflow. Per-level `max_turns` decays via
+  `DEPTH_BUDGET_DECAY = 0.5`. Default `max_spawn_depth=0` preserves existing
+  behaviour. New public exports: `DEPTH_BUDGET_DECAY`, `SpawnDepthExceeded`.
+  6 new tests in `tests/test_swarm_spawn_depth.py` (25/25 targeted slice green;
+  full-suite run silently hung in env — pre-existing, not from these edits).
+- Plan saved at `~/.claude/plans/alright-so-there-was-golden-pike.md`. User
+  approved the two-track approach; this session shipped only Track B.4.
+
+### Decision reversal — Paperclip migration: planned, *not yet executed*
+
+The 2026-04-26 entry below DEFERRED Paperclip on the basis that paperclip is
+multi-team-prod and forge is single-operator. The user revisited the call
+2026-04-27 after watching the Hermes 0.11 release video. **The original
+rationale still applies** (forge is still single-operator); the trigger is
+*user preference shift*, not a change in forge's deployment shape. Recorded
+explicitly so future-me knows the deferral logic still applies if scope shifts
+back.
+
+Two unresolved risks before Track A starts:
+
+- **`paperclip-create-plugin` skill description says "current alpha SDK/runtime."**
+  Forge would be standing its only dashboard on an alpha plugin SDK. Surfaced
+  to user; pending direction.
+- **Upstream model/repo IDs from the Hermes video are unverified.** "GPT-5.5",
+  "DeepSeek v4", "Qwen 2.6", "Xiaomi V2 Pro", and the Hermes repo URL itself
+  weren't checked against vendor docs. Plan items B.2 (intel sources) and B.3
+  (provider profiles) blocked on a 5-min web-search verification pass.
+
 ### Open follow-ups
 
 1. **Intel dry-run side-effect bug** — `forge intel pull --dry-run` writes to

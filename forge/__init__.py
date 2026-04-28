@@ -57,9 +57,11 @@ from .healing import (
 
 # L4 swarm
 from .swarm import (
+    DEPTH_BUDGET_DECAY,
     Consensus,
     RoleAssignment,
     RoleCouncilSpawner,
+    SpawnDepthExceeded,
     Spawner,
     SwarmResult,
     SwarmSpec,
@@ -145,8 +147,8 @@ __all__ = [
     "CircuitBreaker", "CircuitRegistry", "CircuitState", "DenialTracker",
     "ErrorType", "attach_healing", "classify",
     # L4 swarm
-    "Consensus", "RoleAssignment", "RoleCouncilSpawner", "Spawner",
-    "SwarmResult", "SwarmSpec", "Topology",
+    "Consensus", "DEPTH_BUDGET_DECAY", "RoleAssignment", "RoleCouncilSpawner",
+    "SpawnDepthExceeded", "Spawner", "SwarmResult", "SwarmSpec", "Topology",
     # L5 skills
     "CONFIDENCE_MARGIN", "EvalReport", "MIN_SAMPLES", "SkillRun",
     "SkillSearchIndex", "SkillStore", "autosynth", "evaluate",

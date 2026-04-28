@@ -7,6 +7,16 @@ All notable changes to forge are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Sub-agent spawn depth (`max_spawn_depth` on `Spawner`)** — Spawners can now
+  produce child Spawners via `Spawner.make_child()`, with a configurable
+  nesting budget that decrements per level. Default `max_spawn_depth=0`
+  preserves prior behaviour (Spawners cannot beget Spawners). Per-level
+  `max_turns` decays by `DEPTH_BUDGET_DECAY` (0.5) so deep chains cost
+  geometrically less. Topology fan-out (HIERARCHY queen→workers,
+  PARALLEL_COUNCIL) is unaffected — those agents are members of the
+  current Spawner, not children. Raises `SpawnDepthExceeded` on overflow.
+  New public exports: `DEPTH_BUDGET_DECAY`, `SpawnDepthExceeded`. Tests
+  in `tests/test_swarm_spawn_depth.py` (6 cases).
 - **Dashboard scaffold (`forge.dashboard`, optional `[dashboard]` extra)** —
   FastAPI + SQLModel + Jinja2 + HTMX + Tailwind (CDN). Three nav tabs:
   Workspace · Changelog · Genome. Workspace = agents grouped by project
